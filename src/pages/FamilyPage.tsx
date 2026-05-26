@@ -41,14 +41,6 @@ const REGION_TONE: Record<string, PastelTone> = {
   'vuong-quoc-gia-dinh':  'peach',
 }
 
-const DOT_BG: Record<PastelTone, string> = {
-  peach:    'bg-peach-400',
-  mint:     'bg-sage-400',
-  butter:   'bg-butter-400',
-  lavender: 'bg-lavender-400',
-  sky:      'bg-sky-300',
-}
-
 const REGION_BADGE: Record<PastelTone, string> = {
   peach:    'border-peach-200 bg-peach-50 text-peach-500',
   mint:     'border-sage-200 bg-sage-50 text-sage-500',
