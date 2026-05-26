@@ -1,0 +1,262 @@
+@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&family=Comfortaa:wght@400;500;600;700&family=Fredoka:wght@400;500;600;700&family=Comic+Neue:wght@400;700&display=swap');
+
+@import 'tailwindcss';
+
+/* ═══════════════════════════════════════════════════════════════════
+   Lumina Pastel — Design Tokens
+   Tailwind v4 CSS-first config · OKLCH palette · cozy radii · hazy shadows
+   ═══════════════════════════════════════════════════════════════════ */
+@theme {
+  /* ─── Fonts ─────────────────────────────────────────────────────
+     Quicksand: warm, rounded sans — primary display & body
+     Comfortaa: extra-friendly fallback with rounder letterforms
+     Fredoka:  chunky kid-style fallback
+  ─────────────────────────────────────────────────────────────── */
+  --font-display: 'Quicksand', 'Comfortaa', 'Fredoka', system-ui, sans-serif;
+  --font-body:    'Quicksand', 'Comfortaa', system-ui, sans-serif;
+  --font-fun:     'Comic Neue', 'Quicksand', system-ui, sans-serif;
+
+  /* ─── Cream — warm neutral background ──────────────────────────
+     Hue ~85° (warm), very low chroma, near-white.
+  ─────────────────────────────────────────────────────────────── */
+  --color-cream-50:  oklch(98.5% 0.008 85);
+  --color-cream-100: oklch(96.5% 0.018 82);
+  --color-cream-200: oklch(92.0% 0.030 78);
+
+  /* ─── Peach — warm orange ──────────────────────────────────────
+     Cam đào ấm áp. Hue ~45°, muted chroma for soft pastel.
+  ─────────────────────────────────────────────────────────────── */
+  --color-peach-50:  oklch(97.0% 0.020 60);
+  --color-peach-100: oklch(94.0% 0.040 55);
+  --color-peach-200: oklch(88.0% 0.065 50);
+  --color-peach-300: oklch(81.0% 0.095 45);
+  --color-peach-400: oklch(74.0% 0.130 42);
+  --color-peach-500: oklch(65.0% 0.160 40);
+
+  /* ─── Sage — soft yellow-green ────────────────────────────────
+     Xanh lá sage — calmer than mint, slightly warmer hue.
+  ─────────────────────────────────────────────────────────────── */
+  --color-sage-50:  oklch(97.0% 0.018 145);
+  --color-sage-100: oklch(94.0% 0.040 145);
+  --color-sage-200: oklch(88.0% 0.060 143);
+  --color-sage-300: oklch(81.0% 0.080 141);
+  --color-sage-400: oklch(72.0% 0.100 138);
+  --color-sage-500: oklch(62.0% 0.120 135);
+
+  /* ─── Sky — soft blue ──────────────────────────────────────────
+     Xanh sky dịu mắt. Hue ~222° avoids cold cyan.
+  ─────────────────────────────────────────────────────────────── */
+  --color-sky-50:  oklch(97.0% 0.018 225);
+  --color-sky-100: oklch(94.0% 0.035 223);
+  --color-sky-200: oklch(88.0% 0.055 222);
+  --color-sky-300: oklch(81.0% 0.080 220);
+  --color-sky-400: oklch(72.0% 0.100 218);
+  --color-sky-500: oklch(62.0% 0.130 216);
+
+  /* ─── Butter — soft sun yellow (highlight accent) ─────────────── */
+  --color-butter-50:  oklch(97.5% 0.025 95);
+  --color-butter-100: oklch(95.0% 0.050 92);
+  --color-butter-200: oklch(91.0% 0.085 90);
+  --color-butter-300: oklch(86.0% 0.115 86);
+  --color-butter-400: oklch(80.0% 0.135 82);
+  --color-butter-500: oklch(70.0% 0.150 78);
+
+  /* ─── Lavender — muted dusk purple (Lumi / magic accent) ──────── */
+  --color-lavender-50:  oklch(96.0% 0.018 290);
+  --color-lavender-100: oklch(93.0% 0.035 290);
+  --color-lavender-200: oklch(87.0% 0.055 290);
+  --color-lavender-300: oklch(79.0% 0.085 290);
+  --color-lavender-400: oklch(70.0% 0.115 290);
+  --color-lavender-500: oklch(60.0% 0.140 290);
+
+  /* ─── Cocoa — warm text neutrals ──────────────────────────────── */
+  --color-cocoa-700: oklch(45.0% 0.035 65);
+  --color-cocoa-800: oklch(32.0% 0.030 65);
+  --color-cocoa-900: oklch(22.0% 0.025 65);
+
+  /* ═══ Radiant Glow accents ═══════════════════════════════════════
+     Higher-chroma, high-luminance versions of each tone — meant for
+     halos, drop-shadows, glowing rim lights. NOT for backgrounds.
+     Treat every UI element as a light source: glow = emission, not paint.
+  ═══════════════════════════════════════════════════════════════ */
+  --color-peach-glow:    oklch(82% 0.180 42);
+  --color-sage-glow:     oklch(80% 0.150 138);
+  --color-sky-glow:      oklch(80% 0.150 218);
+  --color-butter-glow:   oklch(88% 0.180 88);
+  --color-lavender-glow: oklch(78% 0.155 290);
+
+  /* Back-compat: mint-glow / sky-cozy-glow alias to canonical names */
+  --color-mint-glow:     var(--color-sage-glow);
+  --color-sky-cozy-glow: var(--color-sky-glow);
+
+  /* ─── Backward-compat aliases ─────────────────────────────────────
+     Existing components reference `mint-*` and `sky-cozy-*`.
+     We alias them to the canonical sage/sky tokens so no rename is
+     required across the codebase.
+  ─────────────────────────────────────────────────────────────── */
+  --color-mint-50:  var(--color-sage-50);
+  --color-mint-100: var(--color-sage-100);
+  --color-mint-200: var(--color-sage-200);
+  --color-mint-300: var(--color-sage-300);
+  --color-mint-400: var(--color-sage-400);
+  --color-mint-500: var(--color-sage-500);
+
+  --color-sky-cozy-50:  var(--color-sky-50);
+  --color-sky-cozy-100: var(--color-sky-100);
+  --color-sky-cozy-200: var(--color-sky-200);
+  --color-sky-cozy-300: var(--color-sky-300);
+
+  /* ═══ Radii — chunky, child-friendly ══════════════════════════════
+     `--radius-cozy` is the primary cozy radius (24px). All other
+     scales remain available for hierarchy.
+  ═══════════════════════════════════════════════════════════════ */
+  --radius-xs:   0.5rem;   /*  8px */
+  --radius-sm:   0.75rem;  /* 12px */
+  --radius-md:   1rem;     /* 16px */
+  --radius-cozy: 1.5rem;   /* 24px — primary "cozy" radius */
+  --radius-lg:   1.5rem;   /* 24px alias */
+  --radius-xl:   2rem;     /* 32px */
+  --radius-2xl:  2.5rem;   /* 40px */
+  --radius-3xl:  2rem;     /* keep Tailwind default ish */
+
+  /* ═══ Shadows — multi-layer hazy, never harsh ════════════════════
+     Built with OKLCH for consistent perceived darkness across hues.
+     Three layers: tiny contact + medium depth + wide dreamy halo.
+  ═══════════════════════════════════════════════════════════════ */
+  --shadow-soft:
+    0 1px 2px 0    oklch(45% 0.04 60 / 0.06),
+    0 6px 16px -4px oklch(40% 0.05 60 / 0.10),
+    0 20px 40px -16px oklch(35% 0.06 60 / 0.10);
+
+  --shadow-pop:
+    0 4px 10px -2px  oklch(50% 0.10 50  / 0.16),
+    0 14px 32px -10px oklch(55% 0.15 290 / 0.22),
+    0 28px 64px -20px oklch(60% 0.18 290 / 0.16);
+
+  --shadow-glow:
+    0 0 0 4px       oklch(92% 0.08 90 / 0.35),
+    0 0 28px 6px    oklch(85% 0.15 90 / 0.40);
+
+  --shadow-inset-soft: inset 0 -3px 0 0 oklch(0% 0 0 / 0.06);
+
+  /* ─── Radiant halos — colored bioluminescent glow per tone ────────
+     Use as `shadow-radiant-peach`, `shadow-radiant-butter`, etc.
+     2 layers: tight inner halo + wide outer wash for that "casting
+     light onto its surroundings" feel.
+  ───────────────────────────────────────────────────────────── */
+  --shadow-radiant-peach:
+    0 0 16px 2px  oklch(82% 0.18 42 / 0.55),
+    0 0 40px 10px oklch(82% 0.18 42 / 0.30);
+  --shadow-radiant-sage:
+    0 0 16px 2px  oklch(80% 0.15 138 / 0.55),
+    0 0 40px 10px oklch(80% 0.15 138 / 0.30);
+  --shadow-radiant-sky:
+    0 0 16px 2px  oklch(80% 0.15 218 / 0.55),
+    0 0 40px 10px oklch(80% 0.15 218 / 0.30);
+  --shadow-radiant-butter:
+    0 0 20px 4px  oklch(88% 0.18 88 / 0.60),
+    0 0 48px 12px oklch(88% 0.18 88 / 0.35);
+  --shadow-radiant-lavender:
+    0 0 16px 2px  oklch(78% 0.155 290 / 0.55),
+    0 0 40px 10px oklch(78% 0.155 290 / 0.30);
+
+  /* Star-core: extra-intense double halo for Lv50 Lumi / hero elements */
+  --shadow-star-core:
+    0 0 0 4px      oklch(96% 0.06 88 / 0.65),
+    0 0 30px 8px   oklch(88% 0.18 88 / 0.85),
+    0 0 70px 22px  oklch(82% 0.18 42 / 0.45),
+    0 0 140px 36px oklch(82% 0.18 42 / 0.22);
+
+  /* ═══ Keyframe animations ═══════════════════════════════════════ */
+  --animate-float:     float 3s ease-in-out infinite;
+  --animate-bobble:    bobble 2.5s ease-in-out infinite;
+  --animate-sparkle:   sparkle 1.6s ease-in-out infinite;
+  /* Heartbeat — quick brighten, slow fade. Use for "light is alive". */
+  --animate-heartbeat: heartbeat 2.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  /* Radiate — slow breathing for big halos / star cores. */
+  --animate-radiate:   radiate 3.6s ease-in-out infinite;
+
+  /* ═══ Motion tokens ══════════════════════════════════════════════
+     CSS holds the documented contract — JS implementations live in
+     @/utils/motion.ts and MUST stay in sync. Format for spring tokens
+     is: `<stiffness> <damping> <mass>` (Framer Motion spring config).
+  ═══════════════════════════════════════════════════════════════ */
+  --spring-bouncy: 280 18 0.6;   /* Popup / reveal — playful overshoot */
+  --spring-soft:   260 22 0.6;   /* Default UI — gentle, no overshoot */
+  --spring-firm:   380 28 0.8;   /* Deliberate snap — drag end, locks */
+  --ease-cozy:     cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   Keyframes
+   ═══════════════════════════════════════════════════════════════════ */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-6px); }
+}
+
+@keyframes bobble {
+  0%, 100% { transform: rotate(-2deg); }
+  50%      { transform: rotate(2deg); }
+}
+
+@keyframes sparkle {
+  0%, 100% { opacity: 0.4; transform: scale(0.9); }
+  50%      { opacity: 1;   transform: scale(1.1); }
+}
+
+/* "Heartbeat of light" — fast emission, slow relaxation, dual peaks
+   so it reads like an actual heartbeat instead of a uniform pulse. */
+@keyframes heartbeat {
+  0%, 100% { opacity: 0.55; transform: scale(1); }
+  18%      { opacity: 0.98; transform: scale(1.08); }
+  35%      { opacity: 0.70; transform: scale(1.02); }
+  55%      { opacity: 0.85; transform: scale(1.05); }
+  72%      { opacity: 0.60; transform: scale(1); }
+}
+
+/* Slow radiating breath — for big halos that envelop a character. */
+@keyframes radiate {
+  0%, 100% { opacity: 0.45; transform: scale(0.95); }
+  50%      { opacity: 0.90; transform: scale(1.10); }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   Base layer
+   ═══════════════════════════════════════════════════════════════════ */
+@layer base {
+  html, body, #root {
+    height: 100%;
+  }
+
+  body {
+    margin: 0;
+    font-family: var(--font-body);
+    color: var(--color-cocoa-800);
+    background:
+      radial-gradient(1200px 600px at 10% -10%, var(--color-peach-100) 0%, transparent 60%),
+      radial-gradient(900px 500px at 110% 10%,  var(--color-sky-100)   0%, transparent 60%),
+      radial-gradient(900px 700px at 50% 110%,  var(--color-sage-100)  0%, transparent 60%),
+      var(--color-cream-50);
+    background-attachment: fixed;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    overscroll-behavior: none;
+  }
+
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    color: var(--color-cocoa-900);
+    letter-spacing: -0.01em;
+    margin: 0;
+  }
+
+  p { margin: 0; }
+
+  /* Tap-heavy UI for kids — no text selection, no flash highlight */
+  button, [role='button'] {
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+}
