@@ -1,6 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
+  AlertTriangle,
+  ArrowLeft,
   Camera,
   Check,
   RotateCcw,
@@ -13,21 +15,32 @@ import { cn } from '@/utils/cn'
 /* ════════════════════════════════════════════════════════════════════
    LeafScannerGame
    ────────────────────────────────────────────────────────────────────
-   Mini-game for Node 1 of Rừng Kỳ Diệu (Cây Cổ Thụ Tri Thức). Simulates
-   an AI camera scanning a real-world leaf in three phases:
+   Mini-game for Node 1 of Rừng Kỳ Diệu (Cây Cổ Thụ Tri Thức). Drives
+   a real camera stream through three phases:
 
-     intro     → Lumi briefs the kid, "Bật Camera" CTA pulses.
-     scanning  → 3-second progress bar + scan line + emerald particles
-                 inside a viewport framed by neon corner brackets.
-     success   → bounding box reveal "[Leaf: 98% Confidence]", magical
-                 radial burst, illustrated letter "A" growing on a tree
-                 branch, "+1 Tinh thể Tri thức" badge.
+     intro     → Lumi briefs the kid, "Bật Camera" CTA pulses. Camera
+                 is OFF (no `getUserMedia` call yet — we wait for a
+                 user gesture both for the prompt and for browser
+                 autoplay policies).
+     scanning  → `getUserMedia({ facingMode: 'environment' })` lights
+                 up the rear camera; the live feed renders inside the
+                 viewport, framed by 4 neon corner brackets and swept
+                 by a vertical scanning beam. After exactly 3.5 s the
+                 phase flips to 'success' (simulated CV match for the
+                 demo — keeps the flow deterministic with no ML deps).
+     success   → camera tracks are released immediately (camera light
+                 OFF). Magical flash, leaf emoji burst from the centre,
+                 then a celebratory modal pops with "+100 EXP". Behind
+                 the modal the existing letter / crystal reveal still
+                 plays for richness.
 
-   Self-contained: no router or store coupling. Parent (ForestGamePage)
-   wires `onComplete` to write the reward / complete the sub-node.
+   Safety: tracks are stopped on unmount, on "Quay về", and on retry —
+   so the hardware indicator NEVER stays lit longer than the actual
+   scan. Errors (permission denied, no camera) fall back to a friendly
+   prompt instead of crashing.
    ════════════════════════════════════════════════════════════════════ */
 
-const SCAN_DURATION_MS = 3000
+const SCAN_DURATION_MS = 3500
 /** Tick interval for the scanning progress — 60 fps-ish for smoothness. */
 const SCAN_TICK_MS = 50
 
@@ -37,20 +50,58 @@ interface LeafScannerGameProps {
   /**
    * Fired when the kid taps "Hoàn thành nhiệm vụ" on the success view.
    * Parent decides side-effects (completeSubNode, addCrystals, nav…).
+   * The component already stops the camera before invoking this, so
+   * the parent doesn't have to worry about lingering tracks.
    */
   onComplete?: () => void
+  /**
+   * Optional "Quay về" handler — wired by the parent route. We always
+   * tear down the camera before delegating so the hardware indicator
+   * dies even if the parent navigates away asynchronously.
+   */
+  onExit?: () => void
 }
 
-export function LeafScannerGame({ onComplete }: LeafScannerGameProps) {
+export function LeafScannerGame({ onComplete, onExit }: LeafScannerGameProps) {
   const [phase, setPhase] = useState<Phase>('intro')
   const [scanProgress, setScanProgress] = useState(0)
+  const [isCameraActive, setIsCameraActive] = useState(false)
+  const [cameraError, setCameraError] = useState<string | null>(null)
+  // Modal pops the moment we hit success; dismissing reveals the
+  // existing rich SuccessPanel (letter illustration + crystal) below.
+  const [modalOpen, setModalOpen] = useState(false)
+
+  const videoRef = useRef<HTMLVideoElement | null>(null)
+  const streamRef = useRef<MediaStream | null>(null)
+
   // Stable seed for the particle field so the random positions don't
   // re-shuffle every re-render while scanning is in-flight.
   const particles = useMemo(() => buildParticles(18), [])
 
+  /** Tears down the live MediaStream + clears the <video> srcObject.
+   *  Idempotent: safe to call from multiple lifecycle hooks. */
+  const stopCamera = useCallback(() => {
+    const stream = streamRef.current
+    if (stream) {
+      stream.getTracks().forEach((t) => t.stop())
+      streamRef.current = null
+    }
+    if (videoRef.current) {
+      // Detach so the <video> stops painting the last frame as a
+      // ghost while the browser releases the device handle.
+      videoRef.current.srcObject = null
+    }
+    setIsCameraActive(false)
+  }, [])
+
+  // Hardware safety net — stop tracks if the component unmounts mid-scan
+  // (route change, parent re-key, hot reload). Without this the
+  // hardware camera light can stay on until the tab is closed.
+  useEffect(() => () => stopCamera(), [stopCamera])
+
   // Scanning ticker — advances `scanProgress` from 0 → 1 over
-  // SCAN_DURATION_MS, then flips to the success phase. Cleans itself
-  // up on unmount or phase change.
+  // SCAN_DURATION_MS, then flips to the success phase + releases the
+  // camera + opens the celebration modal in a single tick.
   useEffect(() => {
     if (phase !== 'scanning') return
     const startedAt = performance.now()
@@ -61,28 +112,101 @@ export function LeafScannerGame({ onComplete }: LeafScannerGameProps) {
       if (ratio >= 1) {
         window.clearInterval(id)
         setPhase('success')
+        setModalOpen(true)
+        // Release the camera the instant the demo "match" fires.
+        // The success view is fully synthetic, no live feed needed.
+        stopCamera()
       }
     }, SCAN_TICK_MS)
     return () => window.clearInterval(id)
-  }, [phase])
+  }, [phase, stopCamera])
 
-  const handleStart = () => {
-    setScanProgress(0)
-    setPhase('scanning')
+  const handleStart = async () => {
+    setCameraError(null)
+    // Guard against environments without a camera (SSR, headless tests,
+    // older browsers) so the click handler never throws into the void.
+    if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
+      setCameraError(
+        'Trình duyệt không hỗ trợ camera. Bé thử mở app trên Chrome hoặc Safari mới nhé!',
+      )
+      return
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment' },
+        audio: false,
+      })
+      streamRef.current = stream
+      // Attach + play in the same gesture frame so autoplay-without-
+      // user-activation policies don't reject the .play() promise on
+      // Safari / iOS.
+      const video = videoRef.current
+      if (video) {
+        video.srcObject = stream
+        video.muted = true
+        video.playsInline = true
+        try {
+          await video.play()
+        } catch {
+          // Some Android WebViews resolve play() asynchronously even after
+          // a gesture. The frame already appears — silently ignore.
+        }
+      }
+      setIsCameraActive(true)
+      setScanProgress(0)
+      setPhase('scanning')
+    } catch (err) {
+      // Map the most common DOMException names to kid-friendly copy.
+      const name = (err as DOMException | null)?.name ?? ''
+      const msg =
+        name === 'NotAllowedError' || name === 'PermissionDeniedError'
+          ? 'Bé chưa cho phép camera. Hãy bấm "Cho phép" ở thanh trình duyệt rồi thử lại nhé.'
+          : name === 'NotFoundError' || name === 'DevicesNotFoundError'
+            ? 'Không tìm thấy camera nào trên thiết bị của bé.'
+            : 'Có lỗi khi mở camera — bé thử lại sau một chút nhé!'
+      setCameraError(msg)
+    }
   }
 
   const handleRetry = () => {
+    // Hard reset: stop tracks, wipe modal + progress, fall back to intro.
+    stopCamera()
     setScanProgress(0)
+    setModalOpen(false)
+    setCameraError(null)
     setPhase('intro')
+  }
+
+  const handleComplete = () => {
+    // Defensive — should already be stopped on success transition, but
+    // call again so a rare race can't leak a track.
+    stopCamera()
+    onComplete?.()
+  }
+
+  const handleExit = () => {
+    stopCamera()
+    onExit?.()
   }
 
   return (
     <div className="space-y-5">
-      <CameraViewport phase={phase} progress={scanProgress} particles={particles} />
+      <CameraViewport
+        phase={phase}
+        progress={scanProgress}
+        particles={particles}
+        videoRef={videoRef}
+        isCameraActive={isCameraActive}
+      />
 
       <AnimatePresence mode="wait">
         {phase === 'intro' && (
-          <IntroPanel key="intro" onStart={handleStart} />
+          <IntroPanel
+            key="intro"
+            onStart={handleStart}
+            onExit={onExit ? handleExit : undefined}
+            error={cameraError}
+          />
         )}
         {phase === 'scanning' && (
           <ScanningPanel key="scan" progress={scanProgress} />
@@ -90,11 +214,19 @@ export function LeafScannerGame({ onComplete }: LeafScannerGameProps) {
         {phase === 'success' && (
           <SuccessPanel
             key="success"
-            onComplete={onComplete}
+            onComplete={handleComplete}
             onRetry={handleRetry}
           />
         )}
       </AnimatePresence>
+
+      {/* Page-level celebration overlay — popped the instant the
+          phase flips to 'success', dismissed by tapping its CTA which
+          reveals the SuccessPanel underneath. */}
+      <CompletionDialog
+        open={modalOpen}
+        onContinue={() => setModalOpen(false)}
+      />
     </div>
   )
 }
@@ -107,17 +239,43 @@ interface CameraViewportProps {
   phase: Phase
   progress: number
   particles: ParticleSeed[]
+  videoRef: React.RefObject<HTMLVideoElement | null>
+  isCameraActive: boolean
 }
 
-function CameraViewport({ phase, progress, particles }: CameraViewportProps) {
+function CameraViewport({
+  phase,
+  progress,
+  particles,
+  videoRef,
+  isCameraActive,
+}: CameraViewportProps) {
   return (
     <div
       // aspect-video keeps a clean 16:9 cinematic feel; rounded-3xl +
       // ring-1 hint at a viewfinder rather than a flat preview box.
       className="relative aspect-video w-full overflow-hidden rounded-3xl border border-emerald-400/30 bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-950 shadow-pop ring-1 ring-emerald-400/20"
     >
+      {/* ── Live camera stream ─────────────────────────────────────
+          Always mounted so the videoRef survives across phase changes
+          (intro → scanning → success). Visibility toggles via opacity
+          to keep the element in the DOM — re-mounting on every retry
+          would force a new <video> node and re-trigger autoplay
+          policies on Safari. */}
+      <video
+        ref={videoRef}
+        playsInline
+        muted
+        autoPlay
+        className={cn(
+          'absolute inset-0 size-full object-cover transition-opacity duration-300',
+          isCameraActive ? 'opacity-100' : 'opacity-0',
+        )}
+      />
+
       {/* Faint scanline grid texture so the "live" viewport reads as
-          an AR/AI camera HUD rather than an empty card. */}
+          an AR/AI camera HUD rather than an empty card. Sits ABOVE the
+          video so even the real camera feed gets the futuristic HUD vibe. */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 opacity-25"
@@ -127,23 +285,22 @@ function CameraViewport({ phase, progress, particles }: CameraViewportProps) {
         }}
       />
 
-      {/* Centered emoji "subject" — a dim leaf in idle/scanning, brightens
-          in success so the bounding box has something visible to frame. */}
+      {/* Centered emoji "subject" — visible at intro (placeholder) and
+          on success (frames the bounding box). Hidden during scanning
+          because the real camera feed has taken over the viewport. */}
       <motion.span
         aria-hidden
         className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 select-none text-7xl sm:text-8xl"
         animate={{
-          opacity: phase === 'success' ? 1 : 0.55,
-          scale: phase === 'scanning' ? [1, 1.05, 1] : 1,
+          opacity:
+            phase === 'success' ? 1 : isCameraActive ? 0 : 0.55,
+          scale: 1,
           filter:
             phase === 'success'
               ? 'drop-shadow(0 0 18px rgba(52, 211, 153, 0.85))'
               : 'drop-shadow(0 0 6px rgba(52, 211, 153, 0.45))',
         }}
-        transition={{
-          opacity: { duration: 0.4 },
-          scale:   { duration: 1.6, repeat: phase === 'scanning' ? Infinity : 0, ease: 'easeInOut' },
-        }}
+        transition={{ opacity: { duration: 0.4 } }}
       >
         🍃
       </motion.span>
@@ -159,7 +316,9 @@ function CameraViewport({ phase, progress, particles }: CameraViewportProps) {
         {phase === 'scanning' && <ProcessingChip key="processing" />}
         {phase === 'scanning' && <ScanProgressBar key="bar" progress={progress} />}
 
+        {phase === 'success' && <MagicalFlash key="flash" />}
         {phase === 'success' && <SuccessBurst key="burst" />}
+        {phase === 'success' && <LeafEmojiBurst key="leaves" />}
         {phase === 'success' && <DetectionBoundingBox key="bbox" />}
       </AnimatePresence>
 
@@ -204,17 +363,39 @@ function CornerBrackets({ active }: CornerBracketsProps) {
 
 function ScanLineSweep() {
   return (
-    <motion.span
-      aria-hidden
-      className="pointer-events-none absolute inset-x-3 h-[2px] bg-gradient-to-r from-transparent via-emerald-300 to-transparent"
-      style={{
-        boxShadow: '0 0 14px rgba(52, 211, 153, 0.85), 0 0 28px rgba(52, 211, 153, 0.45)',
-      }}
-      initial={{ top: '12%' }}
-      animate={{ top: ['12%', '88%', '12%'] }}
-      transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
-      exit={{ opacity: 0 }}
-    />
+    <>
+      {/* Wide glowing band that sits BEHIND the hairline laser to give
+          the impression of a soft volumetric beam grazing the leaf.
+          `mix-blend-screen` blends green into the live camera frame so
+          the AR effect reads as light, not as a flat overlay. */}
+      <motion.span
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 h-16 bg-gradient-to-b from-transparent via-emerald-400/40 to-transparent"
+        style={{
+          mixBlendMode: 'screen',
+          filter: 'blur(2px)',
+        }}
+        initial={{ top: '-12%' }}
+        animate={{ top: ['-12%', '100%'] }}
+        transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+        exit={{ opacity: 0 }}
+      />
+      {/* Hairline laser — one-way infinite sweep top → bottom, snapping
+          back to the top each cycle. Matches the spec's
+          `y: ['0%', '100%']` pattern. */}
+      <motion.span
+        aria-hidden
+        className="pointer-events-none absolute inset-x-3 h-[2px] bg-gradient-to-r from-transparent via-emerald-200 to-transparent"
+        style={{
+          boxShadow:
+            '0 0 14px rgba(52, 211, 153, 0.95), 0 0 28px rgba(52, 211, 153, 0.55), 0 0 48px rgba(52, 211, 153, 0.25)',
+        }}
+        initial={{ top: '0%' }}
+        animate={{ top: ['0%', '100%'] }}
+        transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+        exit={{ opacity: 0 }}
+      />
+    </>
   )
 }
 
@@ -395,7 +576,15 @@ function SuccessBurst() {
    Phase panels — what sits BELOW the viewport per phase
    ════════════════════════════════════════════════════════════════════ */
 
-function IntroPanel({ onStart }: { onStart: () => void }) {
+function IntroPanel({
+  onStart,
+  onExit,
+  error,
+}: {
+  onStart: () => void
+  onExit?: () => void
+  error: string | null
+}) {
   return (
     <motion.section
       initial={{ opacity: 0, y: 12 }}
@@ -429,8 +618,27 @@ function IntroPanel({ onStart }: { onStart: () => void }) {
         </div>
       </div>
 
-      {/* Pulse CTA — gentle, infinite breath until the kid commits. */}
-      <div className="flex justify-center">
+      {/* Error toast — surfaces when getUserMedia rejects (permission,
+          no device, unsupported browser). Inline next to the CTA so the
+          kid sees both at once and can retry without scrolling. */}
+      <AnimatePresence>
+        {error && (
+          <motion.div
+            key="camera-error"
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            role="alert"
+            className="flex items-start gap-2 rounded-2xl border-2 border-peach-300 bg-peach-50 p-3 text-sm text-peach-700 shadow-soft"
+          >
+            <AlertTriangle className="mt-0.5 size-4 shrink-0" />
+            <span>{error}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div className="flex flex-wrap items-center justify-center gap-3">
+        {/* Pulse CTA — gentle, infinite breath until the kid commits. */}
         <motion.button
           type="button"
           onClick={onStart}
@@ -448,6 +656,17 @@ function IntroPanel({ onStart }: { onStart: () => void }) {
           <Camera className="size-5" />
           Bật Camera
         </motion.button>
+
+        {onExit && (
+          <button
+            type="button"
+            onClick={onExit}
+            className="inline-flex items-center gap-1.5 rounded-full border-2 border-cream-200 bg-cream-50 px-4 py-2.5 font-display text-sm font-bold text-cocoa-800 shadow-soft hover:bg-cream-100"
+          >
+            <ArrowLeft className="size-4" />
+            Quay về
+          </button>
+        )}
       </div>
     </motion.section>
   )
@@ -463,6 +682,32 @@ function ScanningPanel({ progress }: { progress: number }) {
       transition={{ duration: 0.25 }}
       className="space-y-3"
     >
+      {/* Lumi speech card — dialogue per spec while scanning. Uses the
+          same avatar + bubble tail style as IntroPanel so the kid reads
+          it as a continuation of the same companion. */}
+      <div className="flex items-start gap-3">
+        <motion.span
+          aria-hidden
+          className="grid size-14 shrink-0 place-items-center rounded-full border-2 border-emerald-300 bg-emerald-100 text-3xl shadow-soft"
+          animate={{ y: [0, -3, 0] }}
+          transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
+        >
+          🐾
+        </motion.span>
+        <div className="relative flex-1 rounded-2xl border-2 border-emerald-300 bg-emerald-50 p-4 shadow-soft">
+          <span
+            aria-hidden
+            className="absolute -left-2 top-5 size-3 rotate-45 border-b-2 border-l-2 border-emerald-300 bg-emerald-50"
+          />
+          <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-emerald-600">
+            Lumi đang quét
+          </p>
+          <p className="mt-1 font-display text-base font-bold leading-snug text-cocoa-900">
+            Lumi đang tìm kiếm linh hồn lá cây... Bé giữ yên lá nhé! 🌿
+          </p>
+        </div>
+      </div>
+
       <div className="rounded-2xl border-2 border-emerald-300 bg-emerald-50/80 p-4 shadow-soft">
         <div className="flex items-center justify-between">
           <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-emerald-600">
@@ -480,9 +725,6 @@ function ScanningPanel({ progress }: { progress: number }) {
             transition={{ ease: 'linear', duration: SCAN_TICK_MS / 1000 }}
           />
         </div>
-        <p className="mt-2 text-xs text-cocoa-700/80">
-          Lumi đang quét gân lá, màu sắc và hình dáng để tìm Linh Hồn Lá Cây…
-        </p>
       </div>
     </motion.section>
   )
@@ -656,6 +898,227 @@ function LetterRevealIllustration({ letter }: { letter: string }) {
     </div>
   )
 }
+
+/* ════════════════════════════════════════════════════════════════════
+   Success overlays — magical flash, leaf burst, celebration dialog
+   ────────────────────────────────────────────────────────────────────
+   These three components all mount on the same frame the phase flips
+   to 'success' but are sequenced via per-element `transition.delay` so
+   the kid sees a clean choreography:
+
+     0.00 s  flash bloom (white → transparent, ~0.7 s)
+     0.10 s  leaf cluster bursts outward from the centre
+     0.25 s  completion modal slides in over the viewport
+
+   None of them take props beyond an open flag — they are pure
+   presentational layers that the parent toggles by phase state.
+   ════════════════════════════════════════════════════════════════════ */
+
+/** Full-viewport white flash — covers the viewport then fades to clear
+ *  so the success transition reads as a camera capture moment. */
+function MagicalFlash() {
+  return (
+    <motion.div
+      aria-hidden
+      className="pointer-events-none absolute inset-0 z-30 bg-white"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: [0, 0.95, 0] }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.7, times: [0, 0.2, 1], ease: 'easeOut' }}
+    />
+  )
+}
+
+interface LeafBurstSeed {
+  glyph: string
+  angle: number    // radians
+  distance: number // px from centre at peak
+  duration: number // seconds for one full arc
+  delay: number    // stagger for each emoji
+  size: number     // font-size px
+  rotate: number   // final rotation degrees
+}
+
+/**
+ * Cluster of 🍃 ✨ ⭐ bursting from the centre of the viewport in
+ * radial trajectories. Physics-y feel via Framer Motion's keyframe
+ * arrays (offset peaks then drifts down with fade) — no real physics
+ * engine needed, this is purely a celebration moment, not gameplay.
+ */
+function LeafEmojiBurst() {
+  // 18 emojis spread evenly around 360° with a touch of jitter on
+  // distance/duration so the burst doesn't look mathematically regular.
+  const seeds = useMemo<LeafBurstSeed[]>(() => {
+    const glyphs = ['🍃', '✨', '⭐']
+    const count = 18
+    return Array.from({ length: count }, (_, i) => {
+      const angle = (i / count) * Math.PI * 2
+      // Deterministic per-index "random" so re-renders stay stable
+      // without needing a useRef cache — sine of i is pseudo-random
+      // enough for jitter at this scale.
+      const j = (Math.sin(i * 12.9898) * 43758.5453) % 1
+      const jitter = Math.abs(j)
+      return {
+        glyph: glyphs[i % glyphs.length],
+        angle,
+        distance: 120 + jitter * 90,
+        duration: 1.3 + jitter * 0.7,
+        delay: 0.1 + (i % 6) * 0.04,
+        size: 22 + (i % 3) * 6,
+        rotate: (jitter - 0.5) * 720,
+      }
+    })
+  }, [])
+
+  return (
+    <motion.div
+      aria-hidden
+      className="pointer-events-none absolute inset-0 z-20 grid place-items-center overflow-visible"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+    >
+      {seeds.map((s, i) => {
+        const dx = Math.cos(s.angle) * s.distance
+        const dy = Math.sin(s.angle) * s.distance
+        return (
+          <motion.span
+            key={i}
+            className="absolute select-none leading-none"
+            style={{
+              fontSize: s.size,
+              // Gentle drop-shadow so the dark camera viewport reads
+              // the white sparkle / yellow star edges cleanly.
+              filter: 'drop-shadow(0 2px 6px rgba(15, 23, 42, 0.45))',
+            }}
+            initial={{ x: 0, y: 0, scale: 0.4, opacity: 0, rotate: 0 }}
+            animate={{
+              // Peak outward then sag a bit on the way out — gives the
+              // emojis a "tossed upward then falling" silhouette
+              // without needing real gravity sim.
+              x: [0, dx, dx * 1.05],
+              y: [0, dy, dy + 18],
+              scale: [0.4, 1.05, 0.7],
+              opacity: [0, 1, 0],
+              rotate: [0, s.rotate * 0.5, s.rotate],
+            }}
+            transition={{
+              duration: s.duration,
+              delay: s.delay,
+              ease: 'easeOut',
+            }}
+          >
+            {s.glyph}
+          </motion.span>
+        )
+      })}
+    </motion.div>
+  )
+}
+
+/**
+ * CompletionDialog — page-level celebration modal. Opens the instant
+ * the phase flips to 'success'; dismissing with "Tiếp tục khám phá"
+ * reveals the existing rich SuccessPanel underneath.
+ */
+function CompletionDialog({
+  open,
+  onContinue,
+}: {
+  open: boolean
+  onContinue: () => void
+}) {
+  return (
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          key="completion-dialog"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Hoàn thành quét lá"
+          className="fixed inset-0 z-50 grid place-items-center bg-slate-950/55 px-4 backdrop-blur-sm"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+        >
+          <motion.div
+            initial={{ scale: 0.7, y: 30, opacity: 0, rotate: -2 }}
+            animate={{ scale: 1, y: 0, opacity: 1, rotate: 0 }}
+            exit={{ scale: 0.9, opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 220, damping: 18 }}
+            className="relative w-full max-w-md overflow-hidden rounded-[2.25rem] border-4 border-emerald-300 bg-cream-50 p-6 text-center shadow-pop sm:p-7"
+            style={{
+              backgroundImage: `
+                radial-gradient(60% 70% at 50% 0%, rgba(167, 243, 208, 0.55) 0%, transparent 70%),
+                radial-gradient(60% 70% at 50% 110%, rgba(190, 242, 100, 0.4) 0%, transparent 70%),
+                linear-gradient(180deg, var(--color-cream-50) 0%, #ecfdf5 100%)
+              `,
+            }}
+          >
+            {/* Hero leaf with a slow rotate so it feels alive. */}
+            <motion.span
+              aria-hidden
+              className="block select-none text-6xl"
+              animate={{ rotate: [-8, 8, -8], y: [0, -4, 0] }}
+              transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
+              style={{ filter: 'drop-shadow(0 0 14px rgba(52, 211, 153, 0.7))' }}
+            >
+              🌿
+            </motion.span>
+
+            <div className="mt-3 inline-flex items-center gap-1.5 rounded-full border-2 border-emerald-300 bg-emerald-100 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.3em] text-emerald-600 shadow-soft">
+              <Sparkles className="size-3.5 fill-emerald-300 stroke-emerald-600" />
+              Thành tựu mới
+            </div>
+
+            <h2 className="mt-3 font-display text-2xl font-bold leading-snug text-cocoa-900">
+              Thành công!
+            </h2>
+            <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-cocoa-700">
+              Linh hồn lá cây đã thức tỉnh{' '}
+              <span className="font-display font-bold text-emerald-600">
+                Cây Cổ Thụ Tri Thức
+              </span>
+              ! 🎉
+            </p>
+
+            {/* +100 EXP reward chip — animated glow so the eye lands here
+                first when the modal pops. */}
+            <motion.div
+              initial={{ scale: 0.6, opacity: 0, y: 10 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              transition={{
+                delay: 0.25,
+                type: 'spring',
+                stiffness: 240,
+                damping: 16,
+              }}
+              className="mx-auto mt-4 inline-flex items-center gap-2 rounded-full border-[3px] border-butter-400 bg-gradient-to-br from-butter-200 to-butter-300 px-5 py-2 font-display text-lg font-bold text-cocoa-900 shadow-pop"
+              style={{ boxShadow: '0 0 18px rgba(245, 200, 80, 0.55)' }}
+            >
+              <Zap className="size-5 fill-butter-500 stroke-butter-500" />
+              +100 EXP
+            </motion.div>
+
+            <motion.button
+              type="button"
+              onClick={onContinue}
+              whileHover={{ y: -2, scale: 1.03 }}
+              whileTap={{ scale: 0.96 }}
+              transition={{ type: 'spring', stiffness: 240, damping: 16 }}
+              className="mt-6 inline-flex items-center gap-2 rounded-full border-[3px] border-emerald-500 bg-gradient-to-br from-emerald-400 to-emerald-500 px-6 py-2.5 font-display text-sm font-bold text-white shadow-pop focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-200"
+            >
+              Tiếp tục khám phá
+              <Sparkles className="size-4" />
+            </motion.button>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  )
+}
+
+/* ── Sparkles helper for the LetterRevealIllustration above ────────── */
 
 function FloatingSparkles() {
   const spots = [

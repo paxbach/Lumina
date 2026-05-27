@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { motion } from 'framer-motion'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { useAppStore } from '@/store/useAppStore'
+import { useUser } from '@/contexts/UserContext'
 import { cn } from '@/utils/cn'
 import { pageVariants } from '@/utils/motion'
 
@@ -74,15 +74,22 @@ export function PageLayout({
 
 /**
  * Small pastel avatar in the page header — entry point to /profile.
- * Hidden when already on the profile page to avoid a self-link.
+ * Hidden when already on the profile page to avoid a self-link. Reads
+ * name + avatar from `<UserContext>` so the chip stays in sync with the
+ * onboarding choice (and any future avatar swap inside ProfilePage).
  */
 function UserAvatar() {
   const navigate = useNavigate()
   const { pathname } = useLocation()
-  const avatarEmoji = useAppStore((s) => s.profile.avatarEmoji)
-  const name = useAppStore((s) => s.profile.name)
+  const { currentUser } = useUser()
 
   if (pathname === '/profile') return null
+
+  // RequireUser guard ensures currentUser is non-null inside AppShell,
+  // but we keep a defensive fallback so a stray render during the
+  // onboarding → app transition can't crash on a null deref.
+  const avatar = currentUser?.avatar ?? '✨'
+  const name = currentUser?.name ?? 'Bé'
 
   return (
     <motion.button
@@ -98,7 +105,7 @@ function UserAvatar() {
         'focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-lavender-200',
       )}
     >
-      <span aria-hidden>{avatarEmoji}</span>
+      <span aria-hidden>{avatar}</span>
     </motion.button>
   )
 }

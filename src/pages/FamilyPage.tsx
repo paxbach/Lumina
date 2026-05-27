@@ -25,6 +25,7 @@ import {
 } from '@/components/family/WashiTape'
 import { StickerGlyph } from '@/components/quest/DecorateMemoryScreen'
 import { useAppStore } from '@/store/useAppStore'
+import { useUser } from '@/contexts/UserContext'
 import { cn } from '@/utils/cn'
 import { springBouncy, springSoft } from '@/utils/motion'
 import type { DiaryEntry, PastelTone } from '@/types'
@@ -151,7 +152,12 @@ function decorFor(photoId: string): PolaroidDecor {
    ════════════════════════════════════════════════════════════════════ */
 
 export default function FamilyPage() {
-  const profile = useAppStore((s) => s.profile)
+  // Displayable name now comes from the UserContext (onboarding profile)
+  // rather than the legacy Zustand `profile` field. Falls back to a
+  // gentle generic if the context is somehow empty so the header never
+  // renders as "Sổ ký ức của undefined".
+  const { currentUser } = useUser()
+  const displayName = currentUser?.name ?? 'Bé'
   // Single source of truth: every captured memory now lives in
   // `diaryEntries`. The Scrapbook reads it directly so stickers + parent
   // notes + dayInJourney flow through with no shape-mapping shim.
@@ -196,7 +202,7 @@ export default function FamilyPage() {
             Nhật ký Ánh sáng
           </p>
           <h1 className="text-2xl font-display font-bold text-cocoa-900">
-            Sổ ký ức của {profile.name}
+            Sổ ký ức của {displayName}
           </h1>
           <p className="mt-0.5 text-xs text-cocoa-700/70">
             Mỗi tấm ảnh là một khoảnh khắc ngoài đời bé đã chinh phục cùng

@@ -1,11 +1,41 @@
 import { ArrowLeft, Star } from 'lucide-react'
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import {
+  Navigate,
+  useNavigate,
+  useParams,
+  useSearchParams,
+} from 'react-router-dom'
 import { PageLayout } from '@/components/layout/PageLayout'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { IconButton } from '@/components/ui/IconButton'
 import { ProgressBar } from '@/components/ui/ProgressBar'
 import { useAppStore } from '@/store/useAppStore'
+
+// Lesson ids that have been upgraded to dedicated mission pages.
+// Hitting /lessons/<id> for any of these should redirect rather than
+// render the generic LessonDetailPage so existing deep-links + the
+// world-map sub-node fall-through still land on the rich experience.
+const DEDICATED_LESSON_ROUTES: Record<string, string> = {
+  shapes: '/science-mountain/shape-hunter',
+  numbers: '/smart-city/city-builder',
+  colors: '/cultural-island/tet-color-hunt',
+}
+
+// Sub-node-id-keyed redirects for cases where a single lesson id is
+// SHARED between a standalone Lessons-library card AND a world-map
+// sub-node that should open a richer mission. The sub-node id arrives
+// via the `?node=…` search param that WorldMapPage always passes, so a
+// click from the lesson library (no `?node=`) keeps rendering the
+// generic page while a click from the world map jumps to the mission.
+//
+// Example: `vqgd-bua-com` is a `lesson` sub-node with
+// `targetId: 'animals'` — the same `animals` lesson id used by the
+// "Bạn thú" card in /lessons. We can't redirect on `animals` without
+// hijacking that card, so we redirect on the sub-node id instead.
+const DEDICATED_SUBNODE_ROUTES: Record<string, string> = {
+  'vqgd-bua-com': '/family-kingdom/mom-meal',
+}
 
 export default function LessonDetailPage() {
   const { id = '' } = useParams()
@@ -17,6 +47,22 @@ export default function LessonDetailPage() {
   const setProgress = useAppStore((s) => s.setLessonProgress)
   const addStars = useAppStore((s) => s.addStars)
   const completeSubNode = useAppStore((s) => s.completeSubNode)
+
+  // Redirect BEFORE the lesson lookup so unknown ids still fall through
+  // to the "Không tìm thấy" card below. Sub-node-id overrides win over
+  // lesson-id overrides — they're the more specific signal (the kid
+  // landed here from a particular world-map node, not the lesson
+  // library card).
+  const subNodeRoute = subNodeId ? DEDICATED_SUBNODE_ROUTES[subNodeId] : null
+  const dedicatedRoute = subNodeRoute ?? DEDICATED_LESSON_ROUTES[id]
+  if (dedicatedRoute) {
+    // Preserve the original ?region=&node= so the upgraded mission can
+    // still credit the sub-node when it completes.
+    const qs = searchParams.toString()
+    return (
+      <Navigate to={qs ? `${dedicatedRoute}?${qs}` : dedicatedRoute} replace />
+    )
+  }
 
   if (!lesson) {
     return (

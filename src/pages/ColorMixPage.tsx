@@ -1,7 +1,6 @@
 import { ArrowLeft } from 'lucide-react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { PageLayout } from '@/components/layout/PageLayout'
-import { Card } from '@/components/ui/Card'
 import { IconButton } from '@/components/ui/IconButton'
 import { ColorMixGame } from '@/components/games/ColorMixGame'
 import { useAppStore } from '@/store/useAppStore'
@@ -40,9 +39,11 @@ export default function ColorMixPage() {
         </div>
       }
     >
-      <Card tone="cream" padding="lg">
-        <ColorMixGame onComplete={handleWin} />
-      </Card>
+      {/* No Card wrapper — the upgraded ColorMixGame ships its own
+          self-contained "Space Light" dark dashboard. Wrapping it in a
+          cream Card would put a beige frame around a deep-space panel
+          and break the sci-fi aesthetic. */}
+      <ColorMixGame onComplete={handleWin} />
     </PageLayout>
   )
 }

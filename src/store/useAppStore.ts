@@ -264,9 +264,13 @@ export interface SaveMemoryInput {
   stickers?: DiarySticker[]
 }
 
+// Legacy identity fields — kept for the persisted shape but no longer
+// surfaced in UI. Name + avatar now live in UserContext (see
+// src/contexts/UserContext.tsx) and are sourced from the onboarding
+// flow. `stars` remains the canonical game-progress counter.
 const defaultProfile: KidProfile = {
   id: 'kid-1',
-  name: 'Bé Bí',
+  name: '',
   avatarEmoji: '🐻',
   stars: 0,
 }

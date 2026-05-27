@@ -1,6 +1,11 @@
-import { lazy, Suspense } from 'react'
-import { createBrowserRouter, RouterProvider } from 'react-router-dom'
+import { lazy, Suspense, type ReactNode } from 'react'
+import {
+  createBrowserRouter,
+  Navigate,
+  RouterProvider,
+} from 'react-router-dom'
 import { AppShell } from '@/components/layout/AppShell'
+import { useUser } from '@/contexts/UserContext'
 
 const HomePage         = lazy(() => import('@/pages/HomePage'))
 const WorldMapPage     = lazy(() => import('@/pages/WorldMapPage'))
@@ -16,10 +21,26 @@ const ZooPhotoQuestPage = lazy(() => import('@/pages/ZooPhotoQuestPage'))
 const VietnamHistoryMission = lazy(
   () => import('@/pages/cultural-island/VietnamHistoryMission'),
 )
+const ShapeHunterMission = lazy(
+  () => import('@/pages/science-mountain/ShapeHunterMission'),
+)
+const CityBuilderMission = lazy(
+  () => import('@/pages/smart-city/CityBuilderMission'),
+)
+const TetColorHuntMission = lazy(
+  () => import('@/pages/cultural-island/TetColorHuntMission'),
+)
+const MomMealMission = lazy(
+  () => import('@/pages/family-kingdom/MomMealMission'),
+)
+const LeafMatchMission = lazy(
+  () => import('@/pages/lumi/LeafMatchMission'),
+)
 const FamilyPage       = lazy(() => import('@/pages/FamilyPage'))
 const LessonsPage      = lazy(() => import('@/pages/LessonsPage'))
 const LessonDetailPage = lazy(() => import('@/pages/LessonDetailPage'))
 const ProfilePage      = lazy(() => import('@/pages/ProfilePage'))
+const OnboardingPage   = lazy(() => import('@/pages/OnboardingPage'))
 const NotFoundPage     = lazy(() => import('@/pages/NotFoundPage'))
 
 function PageFallback() {
@@ -30,9 +51,47 @@ function PageFallback() {
   )
 }
 
+/* ════════════════════════════════════════════════════════════════════
+   Route guards
+   ────────────────────────────────────────────────────────────────────
+   • RequireUser — wrapped around the AppShell layout. If the kid hasn't
+     completed onboarding (no `currentUser` in context/localStorage),
+     redirect to /onboarding. This is the bouncer for the whole app.
+   • RedirectIfUser — wrapped around the onboarding route so a user who
+     already has a profile can't loop back into the welcome screen by
+     typing /onboarding. They get sent home instead.
+   ════════════════════════════════════════════════════════════════════ */
+
+function RequireUser({ children }: { children: ReactNode }) {
+  const { currentUser } = useUser()
+  if (!currentUser) return <Navigate to="/onboarding" replace />
+  return <>{children}</>
+}
+
+function RedirectIfUser({ children }: { children: ReactNode }) {
+  const { currentUser } = useUser()
+  if (currentUser) return <Navigate to="/" replace />
+  return <>{children}</>
+}
+
 const router = createBrowserRouter([
+  // Onboarding route lives OUTSIDE the AppShell layout so the welcome
+  // screen renders edge-to-edge with no bottom nav bar — a single,
+  // focused flow until the kid hits "Bắt đầu phiêu lưu".
   {
-    element: <AppShell />,
+    path: '/onboarding',
+    element: (
+      <RedirectIfUser>
+        <OnboardingPage />
+      </RedirectIfUser>
+    ),
+  },
+  {
+    element: (
+      <RequireUser>
+        <AppShell />
+      </RequireUser>
+    ),
     children: [
       { path: '/',              element: <HomePage /> },
       { path: '/map',           element: <WorldMapPage /> },
@@ -40,6 +99,8 @@ const router = createBrowserRouter([
       { path: '/quests/:id',    element: <QuestDetailPage /> },
       { path: '/lumi',              element: <LumiPage /> },
       { path: '/games/color-mix',      element: <ColorMixPage /> },
+      // "Ghép Lá Rừng" — AR pet-feeding game (Chơi cùng Lumi card).
+      { path: '/games/leaf-match',     element: <LeafMatchMission /> },
       { path: '/games/color-hunter',   element: <ColorHunterPage /> },
       { path: '/games/family-chef',    element: <FamilyChefPage /> },
       { path: '/games/memory-puzzle',  element: <MemoryPuzzlePage /> },
@@ -53,6 +114,14 @@ const router = createBrowserRouter([
       { path: '/photo-quests/zoo/:animalId', element: <ZooPhotoQuestPage /> },
       // Đảo Văn Hoá — Hành trình ngược dòng thời gian
       { path: '/cultural-island/vietnam-history', element: <VietnamHistoryMission /> },
+      // Núi Khoa Học — AR Shape Hunter mini-game (camera + canvas).
+      { path: '/science-mountain/shape-hunter', element: <ShapeHunterMission /> },
+      // Thành Phố Thông Minh — AR City Builder counting game.
+      { path: '/smart-city/city-builder', element: <CityBuilderMission /> },
+      // Đảo Văn Hoá — Tết Color Hunt AR scavenger.
+      { path: '/cultural-island/tet-color-hunt', element: <TetColorHuntMission /> },
+      // Vương Quốc Gia Đình — "Bữa cơm của mẹ" tap-to-decorate game.
+      { path: '/family-kingdom/mom-meal', element: <MomMealMission /> },
       { path: '/family',        element: <FamilyPage /> },
       { path: '/lessons',       element: <LessonsPage /> },
       { path: '/lessons/:id',   element: <LessonDetailPage /> },

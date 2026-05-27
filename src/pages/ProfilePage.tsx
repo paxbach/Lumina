@@ -6,11 +6,17 @@ import { PageLayout } from '@/components/layout/PageLayout'
 import { Card } from '@/components/ui/Card'
 import { StarBadge } from '@/components/ui/StarBadge'
 import { useAppStore } from '@/store/useAppStore'
+import { useUser } from '@/contexts/UserContext'
 import { springBouncy, springSoft } from '@/utils/motion'
 
 export default function ProfilePage() {
   const navigate = useNavigate()
-  const profile = useAppStore((s) => s.profile)
+  // Identity (name + avatar) — UserContext / localStorage. Game progress
+  // (stars, lesson completion) still lives in the Zustand store.
+  const { currentUser } = useUser()
+  const displayName = currentUser?.name ?? 'Bé'
+  const displayAvatar = currentUser?.avatar ?? '✨'
+  const stars = useAppStore((s) => s.profile.stars)
   const lessons = useAppStore((s) => s.lessons)
   const resetAll = useAppStore((s) => s.resetAll)
 
@@ -44,10 +50,10 @@ export default function ProfilePage() {
       <div className="grid gap-6 sm:grid-cols-2">
         <Card tone="peach" padding="lg" className="flex flex-col items-center text-center">
           <div className="grid size-28 place-items-center rounded-full bg-white/70 text-7xl shadow-inset-soft">
-            <span aria-hidden>{profile.avatarEmoji}</span>
+            <span aria-hidden>{displayAvatar}</span>
           </div>
-          <h2 className="mt-4 text-2xl font-display font-bold">{profile.name}</h2>
-          <StarBadge count={profile.stars} className="mt-3" />
+          <h2 className="mt-4 text-2xl font-display font-bold">{displayName}</h2>
+          <StarBadge count={stars} className="mt-3" />
         </Card>
 
         <Card tone="mint" padding="lg">
@@ -61,7 +67,7 @@ export default function ProfilePage() {
             </div>
             <div className="flex items-center justify-between">
               <dt>Tổng số sao</dt>
-              <dd className="font-display text-xl font-bold tabular-nums">{profile.stars}</dd>
+              <dd className="font-display text-xl font-bold tabular-nums">{stars}</dd>
             </div>
           </dl>
         </Card>

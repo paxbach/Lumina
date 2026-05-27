@@ -10,10 +10,14 @@ import { StatChip } from '@/components/dashboard/StatChip'
 import { TreeProgressBar } from '@/components/dashboard/TreeProgressBar'
 import { DailyNPCGreeting } from '@/components/npc/DailyNPCGreeting'
 import { useAppStore } from '@/store/useAppStore'
+import { useUser } from '@/contexts/UserContext'
 
 export default function HomePage() {
   const navigate = useNavigate()
-  const profile = useAppStore((s) => s.profile)
+  // Identity (name + avatar) comes from UserContext now; the Zustand
+  // `profile` still owns game progress fields the rest of this page uses.
+  const { currentUser } = useUser()
+  const displayName = currentUser?.name ?? 'Bé'
   const streak = useAppStore((s) => s.streak)
   const crystals = useAppStore((s) => s.knowledgeCrystals)
   const forestRevival = useAppStore((s) => s.forestRevival)
@@ -30,7 +34,7 @@ export default function HomePage() {
               Lumina Adventure
             </p>
             <h1 className="text-xl font-display font-bold leading-tight text-cocoa-900">
-              Chào {profile.name}!
+              Chào {displayName}!
             </h1>
           </div>
 
@@ -92,7 +96,7 @@ export default function HomePage() {
               className="rounded-2xl border-2 border-cream-200 bg-cream-50/90 px-5 py-3 text-center shadow-soft backdrop-blur"
             >
               <p className="font-display text-base text-cocoa-800 sm:text-lg">
-                Chào <span className="font-bold text-lavender-500">{profile.name}</span>!
+                Chào <span className="font-bold text-lavender-500">{displayName}</span>!
                 Hôm nay mình đi khám phá gì nào?
               </p>
             </motion.div>
