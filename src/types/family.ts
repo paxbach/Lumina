@@ -65,6 +65,24 @@ export interface ActivityEntry {
   createdAt: string
 }
 
+/**
+ * Per-tab presence payload broadcast on Supabase Realtime Presence.
+ *
+ * Carried inside `channel.track({...})` and reconstituted from the
+ * `presenceState()` returned during 'sync' / 'join' / 'leave' events.
+ * `memberId` is the canonical key — multiple tabs of the same member
+ * can connect, but a single memberId = one online row in the UI.
+ */
+export interface OnlinePresence {
+  memberId: string
+  displayName: string
+  avatar: string
+  /** Optional UI route hint — used by future "Emma đang ở Bản đồ" UI. */
+  page?: string
+  /** ISO timestamp at last track() call. */
+  lastSeen: string
+}
+
 export type RewardKind = 'badge' | 'stars' | 'memory'
 
 export interface SharedReward {

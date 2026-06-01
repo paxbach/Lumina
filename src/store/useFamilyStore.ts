@@ -5,6 +5,7 @@ import type {
   Family,
   Member,
   MemberRole,
+  OnlinePresence,
   SharedQuest,
   SharedReward,
 } from '@/types/family'
@@ -156,8 +157,13 @@ interface FamilyState {
   rewards: SharedReward[]
   /** Per-tab id of the member acting in this tab. From sessionStorage. */
   currentMemberId: string | null
-  /** memberId → epoch-ms last seen via Realtime presence sync. */
-  presence: Record<string, number>
+  /**
+   * memberId → live presence payload. Maintained by useFamilyRealtime
+   * from Supabase `presence` sync / join / leave events. A key present
+   * here = the member is currently online on at least one tab. Removal
+   * is instant on 'leave' (no timestamp window needed).
+   */
+  presence: Record<string, OnlinePresence>
   /** Realtime channel state, surfaced for diagnostics / future UI. */
   status: 'idle' | 'connecting' | 'connected' | 'error'
 
@@ -191,7 +197,12 @@ interface FamilyState {
   _appendActivity: (a: ActivityEntry) => void
   _setRewards: (r: SharedReward[]) => void
   _appendReward: (r: SharedReward) => void
-  _setPresence: (presence: Record<string, number>) => void
+  /** Wholesale replace — called on `presence sync`. */
+  _setPresence: (presence: Record<string, OnlinePresence>) => void
+  /** Single-member insert — called on `presence join`. */
+  _addOnlinePresence: (presence: OnlinePresence) => void
+  /** Single-member remove — called on `presence leave`. */
+  _removeOnlinePresence: (memberId: string) => void
   _setStatus: (s: FamilyState['status']) => void
 }
 
@@ -450,6 +461,17 @@ export const useFamilyStore = create<FamilyState>()(
             : { rewards: [r, ...s.rewards] },
         ),
       _setPresence:  (presence) => set({ presence }),
+      _addOnlinePresence: (p) =>
+        set((s) =>
+          s.presence[p.memberId] ? s : { presence: { ...s.presence, [p.memberId]: p } },
+        ),
+      _removeOnlinePresence: (memberId) =>
+        set((s) => {
+          if (!(memberId in s.presence)) return s
+          const next = { ...s.presence }
+          delete next[memberId]
+          return { presence: next }
+        }),
       _setStatus:    (status) => set({ status }),
     }),
     {
@@ -489,13 +511,17 @@ export function selectQuestPercent(s: FamilyState): number {
 }
 
 export function selectMemberIsOnline(s: FamilyState, memberId: string): boolean {
-  // The current tab's member is always online from its own perspective.
+  // The current tab's member is always online from its own perspective —
+  // the WebSocket may briefly drop while track() is in flight, so we
+  // never want to flicker our own dot.
   if (memberId === s.currentMemberId) return true
-  const last = s.presence[memberId]
-  if (!last) return false
-  return Date.now() - last < PRESENCE_FRESH_MS
+  // Event-driven: a memberId in `presence` means Realtime delivered a
+  // 'join' (or 'sync' picked them up) and no 'leave' has fired yet.
+  return memberId in s.presence
 }
 
+// Retained for backwards compatibility — no longer used since presence
+// is now event-driven (join/leave) instead of timestamp-windowed.
 export const PRESENCE_FRESH_WINDOW_MS = PRESENCE_FRESH_MS
 
 /**
