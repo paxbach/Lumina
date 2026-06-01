@@ -141,6 +141,13 @@ export default function HomePage() {
               tone="mint"
               onClick={() => navigate('/family')}
             />
+            <BigActionButton
+              emoji="🏡"
+              title="Phòng gia đình (Demo)"
+              subtitle="Tạo / tham gia phòng gia đình cùng bố mẹ"
+              tone="sky"
+              onClick={() => navigate('/family-dashboard')}
+            />
           </div>
         </section>
       </div>

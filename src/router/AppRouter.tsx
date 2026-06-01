@@ -37,6 +37,9 @@ const LeafMatchMission = lazy(
   () => import('@/pages/lumi/LeafMatchMission'),
 )
 const FamilyPage       = lazy(() => import('@/pages/FamilyPage'))
+const CreateFamilyPage = lazy(() => import('@/pages/CreateFamilyPage'))
+const JoinFamilyPage   = lazy(() => import('@/pages/JoinFamilyPage'))
+const FamilyDashboardPage = lazy(() => import('@/pages/FamilyDashboardPage'))
 const LessonsPage      = lazy(() => import('@/pages/LessonsPage'))
 const LessonDetailPage = lazy(() => import('@/pages/LessonDetailPage'))
 const ProfilePage      = lazy(() => import('@/pages/ProfilePage'))
@@ -122,7 +125,11 @@ const router = createBrowserRouter([
       { path: '/cultural-island/tet-color-hunt', element: <TetColorHuntMission /> },
       // Vương Quốc Gia Đình — "Bữa cơm của mẹ" tap-to-decorate game.
       { path: '/family-kingdom/mom-meal', element: <MomMealMission /> },
-      { path: '/family',        element: <FamilyPage /> },
+      { path: '/family',           element: <FamilyPage /> },
+      // ─── Multiplayer (Supabase Realtime sync) ──────────────────
+      { path: '/create-family',    element: <CreateFamilyPage /> },
+      { path: '/join-family',      element: <JoinFamilyPage /> },
+      { path: '/family-dashboard', element: <FamilyDashboardPage /> },
       { path: '/lessons',       element: <LessonsPage /> },
       { path: '/lessons/:id',   element: <LessonDetailPage /> },
       { path: '/profile',       element: <ProfilePage /> },
