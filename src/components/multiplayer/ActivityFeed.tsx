@@ -14,11 +14,13 @@ import { cn } from '@/utils/cn'
  */
 
 const KIND_STYLE: Record<ActivityKind, { ring: string; bg: string; emoji: string }> = {
-  family_created:   { ring: 'border-lavender-300', bg: 'bg-lavender-50', emoji: '🏡' },
-  member_joined:    { ring: 'border-sky-300',      bg: 'bg-sky-50',      emoji: '✨' },
-  task_completed:   { ring: 'border-sage-300',     bg: 'bg-sage-50',     emoji: '🌱' },
-  quest_completed:  { ring: 'border-peach-300',    bg: 'bg-peach-50',    emoji: '🎉' },
-  reward_unlocked:  { ring: 'border-butter-300',   bg: 'bg-butter-50',   emoji: '🎁' },
+  family_created:        { ring: 'border-lavender-300', bg: 'bg-lavender-50', emoji: '🏡' },
+  member_joined:         { ring: 'border-sky-300',      bg: 'bg-sky-50',      emoji: '✨' },
+  task_completed:        { ring: 'border-sage-300',     bg: 'bg-sage-50',     emoji: '🌱' },
+  quest_completed:       { ring: 'border-peach-300',    bg: 'bg-peach-50',    emoji: '🎉' },
+  reward_unlocked:       { ring: 'border-butter-300',   bg: 'bg-butter-50',   emoji: '🎁' },
+  moment_captured:       { ring: 'border-peach-300',    bg: 'bg-peach-50',    emoji: '📸' },
+  journal_entry_created: { ring: 'border-lavender-300', bg: 'bg-lavender-50', emoji: '❤️' },
 }
 
 function relativeTime(iso: string): string {

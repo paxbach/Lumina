@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware'
 import type {
   ActivityEntry,
   Family,
+  FamilyMoment,
   Member,
   MemberRole,
   OnlinePresence,
@@ -11,6 +12,8 @@ import type {
 } from '@/types/family'
 import { NATURE_EXPLORER_TEMPLATE } from '@/data/familyQuestTemplates'
 import { supabase } from '@/lib/supabase'
+import { stripImageMetadata } from '@/utils/imageStrip'
+import { familyPhotoPath, uploadFamilyPhoto } from '@/lib/familyPhotos'
 
 /* ════════════════════════════════════════════════════════════════════
    Family store — Supabase Realtime backed (Phase 2)
@@ -97,6 +100,21 @@ interface RewardRow {
   description: string
   created_at: string
 }
+interface MomentRow {
+  id: string
+  family_id: string
+  quest_id: string | null
+  task_key: string | null
+  member_id: string
+  member_name: string
+  member_avatar: string
+  photo_path: string
+  thumb_path: string | null
+  caption: string | null
+  place_label: string | null
+  captured_at: string
+  created_at: string
+}
 
 export const rowToFamily = (r: FamilyRow): Family => ({
   id: r.id,
@@ -146,6 +164,21 @@ export const rowToReward = (r: RewardRow): SharedReward => ({
   questId: r.quest_id,
   createdAt: r.created_at,
 })
+export const rowToMoment = (r: MomentRow): FamilyMoment => ({
+  id: r.id,
+  familyId: r.family_id,
+  questId: r.quest_id,
+  taskKey: r.task_key,
+  memberId: r.member_id,
+  memberName: r.member_name,
+  memberAvatar: r.member_avatar,
+  photoPath: r.photo_path,
+  thumbPath: r.thumb_path,
+  caption: r.caption,
+  placeLabel: r.place_label,
+  capturedAt: r.captured_at,
+  createdAt: r.created_at,
+})
 
 /* ─── State shape ───────────────────────────────────────────────────── */
 
@@ -155,6 +188,8 @@ interface FamilyState {
   quest: SharedQuest | null
   activities: ActivityEntry[]
   rewards: SharedReward[]
+  /** Phase 3 — captured photo moments, newest-first. */
+  moments: FamilyMoment[]
   /** Per-tab id of the member acting in this tab. From sessionStorage. */
   currentMemberId: string | null
   /**
@@ -185,6 +220,24 @@ interface FamilyState {
 
   contributeToTask: (taskKey: string) => Promise<void>
 
+  /**
+   * Phase 3 — primary action. Strip EXIF, upload to Storage, insert
+   * the moment row via RPC. Returns `task_completed` / `quest_completed`
+   * so the caller can fire celebration animations.
+   */
+  uploadMoment: (input: {
+    file: Blob | File
+    caption?: string
+    memberId?: string         // defaults to currentMemberId
+    questId?: string | null   // defaults to active quest id; pass `null` for standalone
+    taskKey?: string | null
+    placeLabel?: string
+  }) => Promise<{
+    momentId: string
+    taskCompleted: boolean
+    questCompleted: boolean
+  }>
+
   leaveFamily: () => void
 
   /* Internal mutators (called by useFamilyRealtime) ──────────── */
@@ -197,6 +250,8 @@ interface FamilyState {
   _appendActivity: (a: ActivityEntry) => void
   _setRewards: (r: SharedReward[]) => void
   _appendReward: (r: SharedReward) => void
+  _setMoments: (moments: FamilyMoment[]) => void
+  _prependMoment: (m: FamilyMoment) => void
   /** Wholesale replace — called on `presence sync`. */
   _setPresence: (presence: Record<string, OnlinePresence>) => void
   /** Single-member insert — called on `presence join`. */
@@ -228,6 +283,7 @@ export const useFamilyStore = create<FamilyState>()(
       quest: null,
       activities: [],
       rewards: [],
+      moments: [],
       currentMemberId: loadCurrentMemberId(),
       presence: {},
       status: 'idle',
@@ -429,6 +485,79 @@ export const useFamilyStore = create<FamilyState>()(
         // the freshly inserted activity + updated quest within ~200ms.
       },
 
+      /* ─── uploadMoment ──────────────────────────────────────────
+         Phase 3 primary action. Wraps the full capture flow:
+           1. Strip EXIF / GPS / device metadata in the browser
+              (NEVER trust an unstripped photo to leave the device).
+           2. Mint a moment id so the storage object + DB row share it.
+           3. Upload to `family-photos` bucket.
+           4. RPC `create_family_moment` — inserts the row, logs the
+              activity, and atomically completes the quest if every
+              task is now satisfied. Returns flags for celebration UI.
+         ────────────────────────────────────────────────────────── */
+      uploadMoment: async (input) => {
+        const s = get()
+        if (!s.family) throw new Error('no_family')
+        const memberId = input.memberId ?? s.currentMemberId
+        if (!memberId) throw new Error('no_member')
+        const me = s.members.find((m) => m.id === memberId)
+        if (!me) throw new Error('member_not_in_family')
+
+        // Default quest link to the active family quest unless the
+        // caller explicitly opts out (passes `questId: null`).
+        const questId =
+          input.questId === null
+            ? null
+            : (input.questId ?? s.quest?.id ?? null)
+        const taskKey = input.taskKey ?? null
+
+        // 1. EXIF strip → child-safety guardrail.
+        const cleanedBlob = await stripImageMetadata(input.file)
+
+        // 2. Generate id up-front so file path + DB row id match.
+        const momentId =
+          typeof crypto !== 'undefined' && 'randomUUID' in crypto
+            ? crypto.randomUUID()
+            : `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
+
+        // 3. Upload to Storage.
+        const photoPath = familyPhotoPath({
+          familyId: s.family.id,
+          momentId,
+        })
+        await uploadFamilyPhoto({
+          familyId: s.family.id,
+          momentId,
+          file: cleanedBlob,
+        })
+
+        // 4. RPC — atomic moment + activity + quest completion check.
+        const { data, error } = await supabase.rpc('create_family_moment', {
+          p_id: momentId,
+          p_family_id: s.family.id,
+          p_member_id: me.id,
+          p_photo_path: photoPath,
+          p_caption: input.caption?.trim() || null,
+          p_quest_id: questId,
+          p_task_key: taskKey,
+          p_place_label: input.placeLabel?.trim() || null,
+        })
+        if (error) throw new Error(error.message)
+
+        const result = data as {
+          moment_id: string
+          kind: string
+          task_completed: boolean
+          quest_completed: boolean
+        }
+
+        return {
+          momentId: result.moment_id,
+          taskCompleted: !!result.task_completed,
+          questCompleted: !!result.quest_completed,
+        }
+      },
+
       /* ─── leaveFamily (this tab only) ──────────────────────────── */
       leaveFamily: () => {
         saveCurrentMemberId(null)
@@ -460,6 +589,13 @@ export const useFamilyStore = create<FamilyState>()(
             ? s
             : { rewards: [r, ...s.rewards] },
         ),
+      _setMoments: (moments) => set({ moments }),
+      _prependMoment: (m) =>
+        set((s) =>
+          s.moments.some((x) => x.id === m.id)
+            ? s
+            : { moments: [m, ...s.moments] },
+        ),
       _setPresence:  (presence) => set({ presence }),
       _addOnlinePresence: (p) =>
         set((s) =>
@@ -485,6 +621,7 @@ export const useFamilyStore = create<FamilyState>()(
         quest: s.quest,
         activities: s.activities,
         rewards: s.rewards,
+        moments: s.moments,
       }),
     },
   ),
@@ -499,14 +636,30 @@ export function selectCurrentMember(s: FamilyState): Member | null {
   return s.members.find((m) => m.id === s.currentMemberId) ?? null
 }
 
+/**
+ * Quest completion %, computed from the moments slice (Phase 3
+ * source of truth — replaces the legacy `tasks[i].progress` counter).
+ *
+ * Returns a NUMBER, so React + Zustand v5's default Object.is check
+ * is sufficient — no useShallow needed at the call site.
+ *
+ * NOTE: components that need the per-task moment LIST should compute
+ * it inline with `useShallow` wrapping the selector (see SharedQuestCard).
+ * A previously-exported `selectTaskMoments` returned a fresh array on
+ * each call which caused an infinite render loop with the v5 store.
+ */
 export function selectQuestPercent(s: FamilyState): number {
   if (!s.quest) return 0
+  const qid = s.quest.id
   const total = s.quest.tasks.reduce((sum, t) => sum + t.required, 0)
   if (total === 0) return 0
-  const filled = s.quest.tasks.reduce(
-    (sum, t) => sum + Math.min(t.progress, t.required),
-    0,
-  )
+  const filled = s.quest.tasks.reduce((sum, t) => {
+    const got = s.moments.reduce(
+      (n, m) => (m.questId === qid && m.taskKey === t.key ? n + 1 : n),
+      0,
+    )
+    return sum + Math.min(got, t.required)
+  }, 0)
   return Math.round((filled / total) * 100)
 }
 

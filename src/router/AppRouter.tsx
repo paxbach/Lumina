@@ -40,6 +40,8 @@ const FamilyPage       = lazy(() => import('@/pages/FamilyPage'))
 const CreateFamilyPage = lazy(() => import('@/pages/CreateFamilyPage'))
 const JoinFamilyPage   = lazy(() => import('@/pages/JoinFamilyPage'))
 const FamilyDashboardPage = lazy(() => import('@/pages/FamilyDashboardPage'))
+const FamilyJournalPage = lazy(() => import('@/pages/FamilyJournalPage'))
+const FamilyAlbumPage = lazy(() => import('@/pages/FamilyAlbumPage'))
 const LessonsPage      = lazy(() => import('@/pages/LessonsPage'))
 const LessonDetailPage = lazy(() => import('@/pages/LessonDetailPage'))
 const ProfilePage      = lazy(() => import('@/pages/ProfilePage'))
@@ -130,6 +132,8 @@ const router = createBrowserRouter([
       { path: '/create-family',    element: <CreateFamilyPage /> },
       { path: '/join-family',      element: <JoinFamilyPage /> },
       { path: '/family-dashboard', element: <FamilyDashboardPage /> },
+      { path: '/family-journal',   element: <FamilyJournalPage /> },
+      { path: '/family-album',     element: <FamilyAlbumPage /> },
       { path: '/lessons',       element: <LessonsPage /> },
       { path: '/lessons/:id',   element: <LessonDetailPage /> },
       { path: '/profile',       element: <ProfilePage /> },

@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { Sparkles, Star } from 'lucide-react'
+import { BookHeart, GalleryHorizontal, Sparkles, Star } from 'lucide-react'
 import { PageLayout } from '@/components/layout/PageLayout'
 import { Button } from '@/components/ui'
 import { useFamilyStore } from '@/store/useFamilyStore'
@@ -10,6 +10,7 @@ import { ActivityFeed } from '@/components/multiplayer/ActivityFeed'
 import { RewardShelf } from '@/components/multiplayer/RewardShelf'
 import { InviteCodeBadge } from '@/components/multiplayer/InviteCodeBadge'
 import { QuestCompletionOverlay } from '@/components/multiplayer/QuestCompletionOverlay'
+import { RecentMemoriesStrip } from '@/components/multiplayer/RecentMemoriesStrip'
 
 /**
  * Multiplayer Dashboard — tablet-landscape layout (1024px AppShell cap).
@@ -89,17 +90,44 @@ export default function FamilyDashboardPage() {
         </div>
       }
     >
-      <div className="mx-auto grid w-full max-w-6xl gap-5 lg:grid-cols-[1.1fr_1fr]">
-        {/* Left column: Members + Quest */}
-        <div className="flex flex-col gap-5">
-          <MembersPanel />
-          <SharedQuestCard />
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-5">
+        {/* Full-width recent memories strip — Phase 3. */}
+        <RecentMemoriesStrip />
+
+        {/* Quick nav to Journal + Album. */}
+        <div className="flex flex-wrap gap-2">
+          <Button
+            tone="peach"
+            variant="soft"
+            size="sm"
+            leftIcon={<BookHeart className="size-4" />}
+            onClick={() => navigate('/family-journal')}
+          >
+            Nhật ký gia đình
+          </Button>
+          <Button
+            tone="lavender"
+            variant="soft"
+            size="sm"
+            leftIcon={<GalleryHorizontal className="size-4" />}
+            onClick={() => navigate('/family-album')}
+          >
+            Album gia đình
+          </Button>
         </div>
-        {/* Right column: Activity feed */}
-        <ActivityFeed />
-        {/* Full-width rewards strip */}
-        <div className="lg:col-span-2">
-          <RewardShelf />
+
+        <div className="grid gap-5 lg:grid-cols-[1.1fr_1fr]">
+          {/* Left column: Members + Quest */}
+          <div className="flex flex-col gap-5">
+            <MembersPanel />
+            <SharedQuestCard />
+          </div>
+          {/* Right column: Activity feed */}
+          <ActivityFeed />
+          {/* Full-width rewards strip */}
+          <div className="lg:col-span-2">
+            <RewardShelf />
+          </div>
         </div>
       </div>
 

@@ -52,6 +52,8 @@ export type ActivityKind =
   | 'task_completed'
   | 'quest_completed'
   | 'reward_unlocked'
+  | 'moment_captured'        // Phase 3 — photo attached to a quest task
+  | 'journal_entry_created'  // Phase 3 — standalone (no quest)
 
 export interface ActivityEntry {
   id: string
@@ -81,6 +83,45 @@ export interface OnlinePresence {
   page?: string
   /** ISO timestamp at last track() call. */
   lastSeen: string
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   Phase 3 — Family Moments
+   ────────────────────────────────────────────────────────────────────── */
+
+/**
+ * A single captured photo + caption + author. The Journal renders the
+ * list newest-first; the Album groups by month + quest. Stored in
+ * Postgres (`family_moments`) and synced via Supabase Realtime.
+ */
+export interface FamilyMoment {
+  id: string
+  familyId: string
+  /** Null when the moment is a standalone "journal entry" not tied to a quest. */
+  questId: string | null
+  /** Free-form task key inside the quest's tasks JSONB. */
+  taskKey: string | null
+  memberId: string
+  /** Denormalised for cheap timeline rendering. */
+  memberName: string
+  memberAvatar: string
+  /** Storage path inside the `family-photos` bucket. */
+  photoPath: string
+  thumbPath: string | null
+  caption: string | null
+  placeLabel: string | null
+  capturedAt: string
+  createdAt: string
+}
+
+/** Family Memory Score — read from the `family_memory_scores` view. */
+export interface MemoryScore {
+  familyId: string
+  questsCompleted: number
+  photosUploaded: number
+  journalEntries: number
+  activeDays30d: number
+  score: number
 }
 
 export type RewardKind = 'badge' | 'stars' | 'memory'
