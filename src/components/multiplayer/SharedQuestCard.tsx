@@ -39,7 +39,7 @@ export function SharedQuestCard() {
       <Card tone="sage" padding="lg">
         <div className="flex flex-col items-center gap-2 py-4 text-center text-cocoa-700/70">
           <ScrollText className="size-8" />
-          <p className="font-display text-base">Chưa có nhiệm vụ chung.</p>
+          <p className="font-display text-base">Chưa có thử thách chung.</p>
         </div>
       </Card>
     )
@@ -57,7 +57,7 @@ export function SharedQuestCard() {
       <header className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-2 text-sage-500">
           <ScrollText className="size-5" />
-          <h2 className="font-display text-lg text-cocoa-900">Nhiệm vụ chung</h2>
+          <h2 className="font-display text-lg text-cocoa-900">Thử thách chung</h2>
         </div>
         <span
           className={cn(
@@ -99,7 +99,7 @@ export function SharedQuestCard() {
 
       {!canCapture && !completed && (
         <p className="rounded-xl bg-white/60 px-4 py-3 text-center text-xs text-cocoa-700">
-          Bạn chưa tham gia gia đình nào trên tab này. Vui lòng tham gia trước.
+          Gia đình bạn chưa tham gia Phòng Gia Đình nào trên tab này. Hãy tham gia trước.
         </p>
       )}
 
@@ -239,7 +239,7 @@ function TaskRow({
             className="flex items-center gap-2 rounded-xl bg-butter-100 px-3 py-2 text-sm font-display text-cocoa-900"
           >
             <Sparkles className="size-4 text-butter-500" />
-            Nhiệm vụ nhỏ này đã hoàn thành nhờ bức ảnh vừa rồi! 🎊
+            Phần thử thách này đã hoàn thành nhờ bức ảnh vừa rồi! 🎊
           </motion.div>
         )}
       </AnimatePresence>

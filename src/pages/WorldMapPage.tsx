@@ -6,6 +6,9 @@ import { PageLayout } from '@/components/layout/PageLayout'
 import { FloatingLeaves } from '@/components/map/FloatingLeaves'
 import { ScienceMountainMap } from '@/components/map/ScienceMountainMap'
 import { EnchantedForestMap } from '@/components/map/EnchantedForestMap'
+import { CulturalIslandMap } from '@/components/map/CulturalIslandMap'
+import { SmartCityMap } from '@/components/map/SmartCityMap'
+import { FamilyKingdomMap } from '@/components/map/FamilyKingdomMap'
 import {
   AirshipFleet,
   BalloonDrift,
@@ -1093,6 +1096,52 @@ function RegionSubMapView({ region, onBack }: RegionSubMapViewProps) {
     )
   }
 
+  // Special 3D map for Cultural Island
+  if (region.id === 'dao-van-hoa') {
+    return (
+      <section>
+        <div className="mb-5 flex items-center justify-between gap-3">
+          <motion.button
+            type="button"
+            onClick={onBack}
+            whileHover={{ x: -2 }}
+            whileTap={{ scale: 0.96 }}
+            transition={springSoft}
+            className="inline-flex items-center gap-2 rounded-full border-2 border-cream-200 bg-cream-50/95 px-4 py-2 font-display text-sm font-bold text-cocoa-800 shadow-soft hover:bg-cream-100"
+          >
+            <ArrowLeft className="size-4" />
+            Quay lại bản đồ chính
+          </motion.button>
+
+          <span className="rounded-full border-2 border-cream-200 bg-cream-50/80 px-3 py-1.5 text-xs font-bold tabular-nums text-cocoa-700/80 shadow-soft">
+            {doneCount}/{region.subNodes.length} điểm
+          </span>
+        </div>
+
+        <header className="mb-4">
+          <p className="text-xs font-bold uppercase tracking-widest text-butter-500">
+            🏝️ Đảo Văn Hóa — Cultural Heritage Map
+          </p>
+          <p className="mt-1 max-w-2xl text-sm text-cocoa-700">
+            {region.description}
+          </p>
+        </header>
+
+        <motion.div
+          initial={{ opacity: 0, scale: 0.98 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ ...springSoft, mass: 0.7, delay: 0.05 }}
+        >
+          <CulturalIslandMap region={region} onNodeClick={handleNodeClick} />
+        </motion.div>
+
+        <p className="mx-auto mt-5 max-w-xl text-center text-xs text-cocoa-700/70">
+          Khám phá hòn đảo văn hóa và hoàn thành các nhiệm vụ để tôn vinh truyền thống Việt Nam! 🏮
+        </p>
+      </section>
+    )
+  }
+
   // Special 3D map for Science Mountain
   if (region.id === 'nui-khoa-hoc') {
     return (
@@ -1134,6 +1183,98 @@ function RegionSubMapView({ region, onBack }: RegionSubMapViewProps) {
 
         <p className="mx-auto mt-5 max-w-xl text-center text-xs text-cocoa-700/70">
           Khám phá ba vùng chủ đề trên Núi Khoa Học và hoàn thành các nhiệm vụ để làm sáng toàn bộ đỉnh núi! ✨
+        </p>
+      </section>
+    )
+  }
+
+  // Special 3D map for Smart City
+  if (region.id === 'thanh-pho-thong-minh') {
+    return (
+      <section>
+        <div className="mb-5 flex items-center justify-between gap-3">
+          <motion.button
+            type="button"
+            onClick={onBack}
+            whileHover={{ x: -2 }}
+            whileTap={{ scale: 0.96 }}
+            transition={springSoft}
+            className="inline-flex items-center gap-2 rounded-full border-2 border-cream-200 bg-cream-50/95 px-4 py-2 font-display text-sm font-bold text-cocoa-800 shadow-soft hover:bg-cream-100"
+          >
+            <ArrowLeft className="size-4" />
+            Quay lại bản đồ chính
+          </motion.button>
+
+          <span className="rounded-full border-2 border-cream-200 bg-cream-50/80 px-3 py-1.5 text-xs font-bold tabular-nums text-cocoa-700/80 shadow-soft">
+            {doneCount}/{region.subNodes.length} điểm
+          </span>
+        </div>
+
+        <header className="mb-4">
+          <p className="text-xs font-bold uppercase tracking-widest text-sky-500">
+            🏙️ Thành Phố Thông Minh — Smart City Map
+          </p>
+          <p className="mt-1 max-w-2xl text-sm text-cocoa-700">
+            {region.description}
+          </p>
+        </header>
+
+        <motion.div
+          initial={{ opacity: 0, scale: 0.98 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ ...springSoft, mass: 0.7, delay: 0.05 }}
+        >
+          <SmartCityMap region={region} onNodeClick={handleNodeClick} />
+        </motion.div>
+
+        <p className="mx-auto mt-5 max-w-xl text-center text-xs text-cocoa-700/70">
+          Khám phá thành phố tương lai thu nhỏ và hoàn thành các nhiệm vụ để thắp sáng cả thành phố! 🏙️
+        </p>
+      </section>
+    )
+  }
+
+  // Special storybook diorama for Family Kingdom
+  if (region.id === 'vuong-quoc-gia-dinh') {
+    return (
+      <section>
+        <div className="mb-5 flex items-center justify-between gap-3">
+          <motion.button
+            type="button"
+            onClick={onBack}
+            whileHover={{ x: -2 }}
+            whileTap={{ scale: 0.96 }}
+            transition={springSoft}
+            className="inline-flex items-center gap-2 rounded-full border-2 border-cream-200 bg-cream-50/95 px-4 py-2 font-display text-sm font-bold text-cocoa-800 shadow-soft hover:bg-cream-100"
+          >
+            <ArrowLeft className="size-4" />
+            Quay lại bản đồ chính
+          </motion.button>
+
+          <span className="rounded-full border-2 border-cream-200 bg-cream-50/80 px-3 py-1.5 text-xs font-bold tabular-nums text-cocoa-700/80 shadow-soft">
+            {doneCount}/{region.subNodes.length} điểm
+          </span>
+        </div>
+
+        <header className="mb-4">
+          <p className="text-xs font-bold uppercase tracking-widest text-amber-500">
+            🏰 Vương Quốc Gia Đình — Cozy Family Storybook
+          </p>
+          <p className="mt-1 max-w-2xl text-sm text-cocoa-700">
+            {region.description}
+          </p>
+        </header>
+
+        <motion.div
+          initial={{ opacity: 0, scale: 0.98 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ ...springSoft, mass: 0.7, delay: 0.05 }}
+        >
+          <FamilyKingdomMap region={region} onNodeClick={handleNodeClick} />
+        </motion.div>
+
+        <p className="mx-auto mt-5 max-w-xl text-center text-xs text-cocoa-700/70">
+          Khám phá lâu đài gia đình trên mây và cùng nhau giữ lửa yêu thương! ❤️
         </p>
       </section>
     )

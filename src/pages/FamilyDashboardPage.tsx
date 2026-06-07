@@ -40,18 +40,18 @@ export default function FamilyDashboardPage() {
         <div className="grid place-items-center gap-6 py-20 text-center">
           <div className="text-5xl">🏡</div>
           <h2 className="font-display text-2xl text-cocoa-900">
-            Chưa có gia đình nào
+            Chưa có Phòng Gia Đình nào
           </h2>
           <p className="max-w-md text-cocoa-700/80">
-            Hãy tạo một gia đình mới hoặc nhập mã mời để tham gia gia đình
-            sẵn có.
+            Tạo một Phòng Gia Đình mới hoặc nhập Mã Kết Nối Gia Đình để cùng
+            các gia đình khác bắt đầu hành trình khám phá.
           </p>
           <div className="flex flex-wrap justify-center gap-3">
             <Button tone="lavender" size="lg" onClick={() => navigate('/create-family')}>
-              Tạo gia đình
+              Tạo Phòng Gia Đình
             </Button>
             <Button tone="sky" size="lg" variant="soft" onClick={() => navigate('/join-family')}>
-              Tham gia gia đình
+              Tham Gia Phòng Gia Đình
             </Button>
           </div>
         </div>
@@ -66,7 +66,7 @@ export default function FamilyDashboardPage() {
         <div className="flex w-full items-center justify-between gap-4">
           <div className="min-w-0">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-lavender-500">
-              Đa người chơi · Demo
+              Family Adventure · Demo
             </p>
             <h1 className="truncate font-display text-2xl text-cocoa-900">
               {family.familyName}
@@ -133,14 +133,14 @@ export default function FamilyDashboardPage() {
 
       {!currentMemberId && (
         <div className="mx-auto mt-6 max-w-3xl rounded-cozy border-2 border-sky-200 bg-sky-50 px-5 py-4 text-center text-sm text-cocoa-800">
-          Tab này chỉ đang <em>xem</em>. Để cùng đóng góp, hãy nhập mã mời
-          ở trang{' '}
+          Tab này chỉ đang <em>xem</em>. Để gia đình bạn cùng đồng hành, hãy
+          nhập Mã Kết Nối Gia Đình ở trang{' '}
           <button
             type="button"
             onClick={() => navigate('/join-family')}
             className="font-semibold text-sky-600 underline-offset-4 hover:underline"
           >
-            Tham gia gia đình
+            Tham Gia Phòng Gia Đình
           </button>
           .
         </div>

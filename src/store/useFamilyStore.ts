@@ -341,7 +341,7 @@ export const useFamilyStore = create<FamilyState>()(
             actor_member_id: memRow.id,
             actor_name: memRow.display_name,
             actor_avatar: memRow.avatar,
-            message: `${memRow.display_name} đã tạo gia đình "${famRow.family_name}"`,
+            message: `Gia đình ${memRow.display_name} đã tạo Phòng Gia Đình "${famRow.family_name}"`,
           },
           {
             family_id: famRow.id,
@@ -349,7 +349,7 @@ export const useFamilyStore = create<FamilyState>()(
             actor_member_id: memRow.id,
             actor_name: memRow.display_name,
             actor_avatar: memRow.avatar,
-            message: `${memRow.display_name} đã tham gia gia đình`,
+            message: `Gia đình ${memRow.display_name} vừa tham gia hành trình`,
           },
         ])
 

@@ -40,7 +40,9 @@ export function ActivityFeed() {
       <header className="flex items-center justify-between">
         <div className="flex items-center gap-2 text-lavender-500">
           <Radio className="size-5" />
-          <h2 className="font-display text-lg text-cocoa-900">Dòng hoạt động</h2>
+          <h2 className="font-display text-lg text-cocoa-900">
+            Hoạt động gia đình
+          </h2>
         </div>
         <span className="rounded-full bg-white/70 px-3 py-1 text-xs font-semibold text-cocoa-700">
           Live
@@ -55,7 +57,8 @@ export function ActivityFeed() {
         </AnimatePresence>
         {activities.length === 0 && (
           <li className="rounded-xl bg-white/60 px-4 py-6 text-center text-sm text-cocoa-700/70">
-            Chưa có hoạt động nào. Hãy bắt đầu đóng góp vào nhiệm vụ chung!
+            Chưa có gia đình nào tham gia hành trình này. Hãy cùng các gia đình
+            đồng hành bắt đầu thử thách chung!
           </li>
         )}
       </ul>

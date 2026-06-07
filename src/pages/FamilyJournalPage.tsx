@@ -30,7 +30,7 @@ export default function FamilyJournalPage() {
         <div className="grid place-items-center gap-4 py-20 text-center">
           <div className="text-5xl">📓</div>
           <p className="font-display text-lg text-cocoa-900">
-            Bạn cần tham gia một gia đình để mở nhật ký.
+            Gia đình bạn cần tham gia một Phòng Gia Đình để mở nhật ký.
           </p>
           <Button tone="lavender" onClick={() => navigate('/family-dashboard')}>
             Về trang gia đình

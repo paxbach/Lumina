@@ -35,7 +35,7 @@ export function InviteCodeBadge({ className }: { className?: string }) {
       whileTap={{ scale: 0.96 }}
       whileHover={{ y: -1 }}
       transition={springBouncy}
-      aria-label={`Sao chép mã mời ${family.inviteCode}`}
+      aria-label={`Sao chép Mã Kết Nối Gia Đình ${family.inviteCode}`}
       className={cn(
         'group flex items-center gap-2 rounded-cozy border-2 border-lavender-200 bg-white/85',
         'px-3 py-2 shadow-soft hover:border-lavender-300',
@@ -45,7 +45,7 @@ export function InviteCodeBadge({ className }: { className?: string }) {
       <Mail className="size-4 text-lavender-500" />
       <div className="flex flex-col items-start leading-tight">
         <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-cocoa-700/70">
-          Mã mời
+          Mã kết nối
         </span>
         <span className="font-display text-sm tracking-[0.18em] text-cocoa-900">
           {family.inviteCode}

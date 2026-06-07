@@ -60,11 +60,15 @@ export default function CreateFamilyPage() {
       header={
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-lavender-500">
-            Đa người chơi
+            Family Adventure
           </p>
           <h1 className="font-display text-2xl text-cocoa-900">
-            Tạo gia đình mới
+            Tạo Phòng Gia Đình
           </h1>
+          <p className="mt-1 max-w-xl text-sm text-cocoa-700/80">
+            Tạo một không gian chung để gia đình bạn cùng đồng hành với những
+            gia đình khác trong hành trình khám phá của Lumi.
+          </p>
         </div>
       }
     >
@@ -178,7 +182,7 @@ export default function CreateFamilyPage() {
             onClick={submit}
             disabled={submitting}
           >
-            {submitting ? 'Đang tạo…' : 'Tạo gia đình'}
+            {submitting ? 'Đang tạo…' : 'Tạo Phòng Gia Đình'}
           </Button>
 
           <button
@@ -186,7 +190,7 @@ export default function CreateFamilyPage() {
             onClick={() => navigate('/join-family')}
             className="text-sm font-semibold text-cocoa-700 underline-offset-4 hover:underline"
           >
-            Đã có mã mời? Tham gia gia đình →
+            Đã có Mã Kết Nối Gia Đình? Tham Gia Phòng Gia Đình →
           </button>
         </Card>
 
@@ -221,9 +225,9 @@ export default function CreateFamilyPage() {
               </p>
             </div>
             <p className="mt-4 text-sm leading-relaxed text-cocoa-700/80">
-              Sau khi tạo, bạn sẽ nhận được <strong>mã mời</strong> để chia sẻ
-              với các thành viên khác. Họ chỉ cần nhập mã trong tab khác để
-              cùng tham gia phiêu lưu.
+              Sau khi tạo, bạn sẽ nhận được <strong>Mã Kết Nối Gia Đình</strong>{' '}
+              để chia sẻ với các gia đình khác. Họ chỉ cần nhập mã trên thiết bị
+              của mình để cùng tham gia hành trình khám phá.
             </p>
           </div>
         </Card>

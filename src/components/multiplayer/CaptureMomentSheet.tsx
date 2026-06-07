@@ -355,7 +355,7 @@ function PickStage({
   return (
     <>
       <p className="text-sm text-cocoa-700/85">
-        Chụp một bức ảnh mới để hoàn thành nhiệm vụ — hoặc chọn từ
+        Chụp một bức ảnh mới để hoàn thành thử thách — hoặc chọn từ
         thư viện nếu bạn đã có sẵn.
       </p>
       <div className="grid grid-cols-2 gap-3">
@@ -629,7 +629,7 @@ function PreviewStage({
         <textarea
           value={caption}
           onChange={(e) => onCaption(e.target.value)}
-          placeholder="VD: Emma tìm được chiếc lá vàng đầu mùa thu 🍂"
+          placeholder="VD: Gia đình Emma tìm được chiếc lá vàng đầu mùa thu 🍂"
           maxLength={200}
           rows={3}
           disabled={submitting}
@@ -672,7 +672,7 @@ function SuccessStage() {
         ✨ Khoảnh khắc đã được lưu
       </motion.p>
       <p className="text-sm text-cocoa-700/80">
-        Cả nhà sẽ thấy bức ảnh này ngay bây giờ.
+        Các gia đình đồng hành sẽ thấy khoảnh khắc này ngay bây giờ.
       </p>
     </motion.div>
   )

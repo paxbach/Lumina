@@ -50,11 +50,11 @@ export function QuestCompletionOverlay() {
               🎉
             </motion.div>
             <h2 className="mt-4 font-display text-3xl text-cocoa-900">
-              Cả nhà thắng lớn!
+              Các gia đình thắng lớn!
             </h2>
             <p className="mt-2 text-base text-cocoa-700">
-              Gia đình <strong>{family?.familyName}</strong> đã hoàn thành{' '}
-              <strong>"{quest.title}"</strong>
+              Các gia đình trong <strong>{family?.familyName}</strong> đã cùng
+              nhau hoàn thành <strong>"{quest.title}"</strong>
             </p>
             <div className="mt-4 flex justify-center gap-3 text-3xl">
               <motion.span animate={{ y: [0, -6, 0] }} transition={{ duration: 1.2, repeat: Infinity, delay: 0 }}>🏅</motion.span>

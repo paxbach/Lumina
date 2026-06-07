@@ -143,8 +143,8 @@ export default function HomePage() {
             />
             <BigActionButton
               emoji="🏡"
-              title="Phòng gia đình (Demo)"
-              subtitle="Tạo / tham gia phòng gia đình cùng bố mẹ"
+              title="Phòng Gia Đình (Demo)"
+              subtitle="Kết nối với các gia đình khác để cùng khám phá và lưu giữ khoảnh khắc"
               tone="sky"
               onClick={() => navigate('/family-dashboard')}
             />

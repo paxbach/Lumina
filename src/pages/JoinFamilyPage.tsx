@@ -61,11 +61,15 @@ export default function JoinFamilyPage() {
       header={
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-500">
-            Đa người chơi
+            Family Adventure
           </p>
           <h1 className="font-display text-2xl text-cocoa-900">
-            Tham gia gia đình
+            Tham Gia Phòng Gia Đình
           </h1>
+          <p className="mt-1 max-w-xl text-sm text-cocoa-700/80">
+            Nhập Mã Kết Nối Gia Đình để tham gia hành trình cùng một gia đình
+            khác.
+          </p>
         </div>
       }
     >
@@ -74,7 +78,7 @@ export default function JoinFamilyPage() {
         <Card tone="cream" padding="lg" className="flex flex-col gap-6">
           <label className="flex flex-col gap-2">
             <span className="text-sm font-semibold text-cocoa-700">
-              Mã mời gia đình
+              Mã Kết Nối Gia Đình
             </span>
             <input
               type="text"
@@ -92,8 +96,8 @@ export default function JoinFamilyPage() {
             />
             {family && (
               <p className="text-xs text-cocoa-700/70">
-                Trình duyệt này đã có gia đình{' '}
-                <strong>{family.familyName}</strong> · mã mời{' '}
+                Trình duyệt này đã có Phòng Gia Đình{' '}
+                <strong>{family.familyName}</strong> · Mã Kết Nối Gia Đình{' '}
                 <strong>{family.inviteCode}</strong>.
               </p>
             )}
@@ -108,7 +112,7 @@ export default function JoinFamilyPage() {
               value={displayName}
               maxLength={24}
               onChange={(e) => setDisplayName(e.target.value)}
-              placeholder="VD: Bé Emma"
+              placeholder="VD: Gia đình Emma"
               className={cn(
                 'h-14 rounded-cozy border-2 border-cream-200 bg-white px-5 text-lg',
                 'font-display text-cocoa-900 placeholder:text-cocoa-700/40',
@@ -184,7 +188,7 @@ export default function JoinFamilyPage() {
             onClick={submit}
             disabled={submitting}
           >
-            {submitting ? 'Đang tham gia…' : 'Tham gia gia đình'}
+            {submitting ? 'Đang tham gia…' : 'Tham Gia Phòng Gia Đình'}
           </Button>
 
           <button
@@ -192,7 +196,7 @@ export default function JoinFamilyPage() {
             onClick={() => navigate('/create-family')}
             className="text-sm font-semibold text-cocoa-700 underline-offset-4 hover:underline"
           >
-            Chưa có gia đình? Tạo mới →
+            Chưa có Phòng Gia Đình? Tạo mới →
           </button>
         </Card>
 
@@ -206,19 +210,20 @@ export default function JoinFamilyPage() {
           </div>
           <ol className="space-y-3 text-sm leading-relaxed text-cocoa-800">
             <li>
-              <strong>1.</strong> Mở một tab khác trong cùng trình duyệt.
+              <strong>1.</strong> Mở một tab khác trong cùng trình duyệt (đóng
+              vai một gia đình khác).
             </li>
             <li>
-              <strong>2.</strong> Tab thứ nhất đã tạo gia đình và sao chép
-              mã mời (VD: <code className="rounded bg-white/70 px-1.5 py-0.5">LUMINA-AB12</code>).
+              <strong>2.</strong> Gia đình đầu tiên đã tạo Phòng Gia Đình và sao
+              chép Mã Kết Nối Gia Đình (VD: <code className="rounded bg-white/70 px-1.5 py-0.5">LUMINA-AB12</code>).
             </li>
             <li>
-              <strong>3.</strong> Tab này nhập mã, chọn tên + avatar khác,
-              rồi nhấn <em>Tham gia gia đình</em>.
+              <strong>3.</strong> Tab này nhập mã, chọn tên gia đình + avatar
+              khác, rồi nhấn <em>Tham Gia Phòng Gia Đình</em>.
             </li>
             <li>
-              <strong>4.</strong> Cả hai tab sẽ thấy nhau trong danh sách
-              thành viên và cùng đóng góp vào nhiệm vụ chung.
+              <strong>4.</strong> Cả hai sẽ thấy nhau trong danh sách Gia Đình
+              Đang Tham Gia và cùng đồng hành trong thử thách chung.
             </li>
           </ol>
           <div className="rounded-xl bg-white/70 px-4 py-3 text-xs text-cocoa-700">

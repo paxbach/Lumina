@@ -26,10 +26,12 @@ export function MembersPanel() {
       <header className="flex items-center justify-between">
         <div className="flex items-center gap-2 text-peach-500">
           <Users className="size-5" />
-          <h2 className="font-display text-lg text-cocoa-900">Thành viên</h2>
+          <h2 className="font-display text-lg text-cocoa-900">
+            Gia Đình Đồng Hành
+          </h2>
         </div>
         <span className="rounded-full bg-white/70 px-3 py-1 text-xs font-semibold text-cocoa-700">
-          {members.length} người
+          {members.length} gia đình
         </span>
       </header>
 
@@ -94,7 +96,7 @@ export function MembersPanel() {
                 <p className="text-xs text-cocoa-700/70">
                   {m.role === 'parent' ? 'Ba / Mẹ' : 'Bé'} ·{' '}
                   <span className={online ? 'text-emerald-600' : 'text-cocoa-700/60'}>
-                    {online ? 'Đang chơi' : 'Vắng'}
+                    {online ? 'Đang tham gia' : 'Vắng'}
                   </span>
                 </p>
               </div>
