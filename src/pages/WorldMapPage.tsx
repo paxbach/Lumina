@@ -4,6 +4,8 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { ArrowLeft, Check, Sparkles } from 'lucide-react'
 import { PageLayout } from '@/components/layout/PageLayout'
 import { FloatingLeaves } from '@/components/map/FloatingLeaves'
+import { ScienceMountainMap } from '@/components/map/ScienceMountainMap'
+import { EnchantedForestMap } from '@/components/map/EnchantedForestMap'
 import {
   AirshipFleet,
   BalloonDrift,
@@ -1044,6 +1046,98 @@ function RegionSubMapView({ region, onBack }: RegionSubMapViewProps) {
   }
 
   const doneCount = region.subNodes.filter((n) => n.isCompleted).length
+
+  // Special 3D map for Enchanted Forest
+  if (region.id === 'rung-ky-dieu') {
+    return (
+      <section>
+        <div className="mb-5 flex items-center justify-between gap-3">
+          <motion.button
+            type="button"
+            onClick={onBack}
+            whileHover={{ x: -2 }}
+            whileTap={{ scale: 0.96 }}
+            transition={springSoft}
+            className="inline-flex items-center gap-2 rounded-full border-2 border-cream-200 bg-cream-50/95 px-4 py-2 font-display text-sm font-bold text-cocoa-800 shadow-soft hover:bg-cream-100"
+          >
+            <ArrowLeft className="size-4" />
+            Quay lại bản đồ chính
+          </motion.button>
+
+          <span className="rounded-full border-2 border-cream-200 bg-cream-50/80 px-3 py-1.5 text-xs font-bold tabular-nums text-cocoa-700/80 shadow-soft">
+            {doneCount}/{region.subNodes.length} điểm
+          </span>
+        </div>
+
+        <header className="mb-4">
+          <p className="text-xs font-bold uppercase tracking-widest text-sage-500">
+            🌳 Rừng Kỳ Diệu — Safari Adventure Map
+          </p>
+          <p className="mt-1 max-w-2xl text-sm text-cocoa-700">
+            {region.description}
+          </p>
+        </header>
+
+        <motion.div
+          initial={{ opacity: 0, scale: 0.98 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ ...springSoft, mass: 0.7, delay: 0.05 }}
+        >
+          <EnchantedForestMap region={region} onNodeClick={handleNodeClick} />
+        </motion.div>
+
+        <p className="mx-auto mt-5 max-w-xl text-center text-xs text-cocoa-700/70">
+          Khám phá năm khu vực của Rừng Kỳ Diệu và hoàn thành các nhiệm vụ để làm sáng cây thần kỳ! ✨
+        </p>
+      </section>
+    )
+  }
+
+  // Special 3D map for Science Mountain
+  if (region.id === 'nui-khoa-hoc') {
+    return (
+      <section>
+        <div className="mb-5 flex items-center justify-between gap-3">
+          <motion.button
+            type="button"
+            onClick={onBack}
+            whileHover={{ x: -2 }}
+            whileTap={{ scale: 0.96 }}
+            transition={springSoft}
+            className="inline-flex items-center gap-2 rounded-full border-2 border-cream-200 bg-cream-50/95 px-4 py-2 font-display text-sm font-bold text-cocoa-800 shadow-soft hover:bg-cream-100"
+          >
+            <ArrowLeft className="size-4" />
+            Quay lại bản đồ chính
+          </motion.button>
+
+          <span className="rounded-full border-2 border-cream-200 bg-cream-50/80 px-3 py-1.5 text-xs font-bold tabular-nums text-cocoa-700/80 shadow-soft">
+            {doneCount}/{region.subNodes.length} điểm
+          </span>
+        </div>
+
+        <header className="mb-4">
+          <p className="text-xs font-bold uppercase tracking-widest text-sky-500">
+            🗻 Núi Khoa Học — 3D Adventure Map
+          </p>
+          <p className="mt-1 max-w-2xl text-sm text-cocoa-700">
+            {region.description}
+          </p>
+        </header>
+
+        <motion.div
+          initial={{ opacity: 0, scale: 0.98 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ ...springSoft, mass: 0.7, delay: 0.05 }}
+        >
+          <ScienceMountainMap region={region} onNodeClick={handleNodeClick} />
+        </motion.div>
+
+        <p className="mx-auto mt-5 max-w-xl text-center text-xs text-cocoa-700/70">
+          Khám phá ba vùng chủ đề trên Núi Khoa Học và hoàn thành các nhiệm vụ để làm sáng toàn bộ đỉnh núi! ✨
+        </p>
+      </section>
+    )
+  }
 
   return (
     <section>

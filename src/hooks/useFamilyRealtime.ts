@@ -339,7 +339,6 @@ export function useFamilyRealtime(): void {
 
               if (actsRes.data && actsRes.data.length > 0) {
                 const newActs = actsRes.data.map(rowToActivity)
-                const newActIds = new Set(newActs.map((a) => a.id))
                 const missing = newActs.filter((a) => !currentActivities.some((ca) => ca.id === a.id))
                 if (missing.length > 0) {
                   log('Reconcile: found missing activities', missing.length)
